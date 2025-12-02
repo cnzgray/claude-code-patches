@@ -22,7 +22,7 @@ Claude Code collapses thinking blocks by default, showing only:
 
 You have to press `ctrl+o` every time to see the actual thinking content. This patch makes thinking blocks visible inline automatically.
 
-**Current Version:** Claude Code 2.0.55 (Updated 2025-11-27)
+**Current Version:** Claude Code 2.0.56 (Updated 2025-12-02)
 
 ## Quick Start
 
@@ -102,6 +102,7 @@ function GkQ({streamMode:A}){return null}
 - v2.0.46: Renamed to `Et2`, uses `xP.createElement`, `HTA.useState`
 - v2.0.53: Renamed to `hq2`, uses `QP.createElement`, `dMA.useState`
 - v2.0.55: Renamed to `nM2`, uses `UP.createElement`, `bOA.useState`
+- v2.0.56: Renamed to `CL2`, uses `HP.createElement`, `xOA.useState`
 
 ### Patch 2: Force Thinking Visibility (v2.0.46)
 **Before:**
@@ -141,11 +142,12 @@ case"thinking":
 - v2.0.46: Changed to `T32` component, `w3`→`H7` variable, checks `K` and `Z`
 - v2.0.53: Changed to `o09` component, `H7`→`L3` variable, checks `K` and `G`
 - v2.0.55: Changed to `J29` component, `L3`→`y3` variable, checks `K` and `G`
+- v2.0.56: Changed to `b29` component, `y3`→`v3` variable, checks `K` and `G`
 
 ## Installation
 
 ### Prerequisites
-- Claude Code v2.0.55 installed
+- Claude Code v2.0.56 installed
 - Node.js (comes with Claude Code installation)
 
 ### Install Steps
@@ -253,18 +255,18 @@ Then restart Claude Code.
 
 ## Verification
 
-Check if patches are applied (for v2.0.55):
+Check if patches are applied (for v2.0.56):
 
 ```bash
-# Check nM2 patch
-grep -n "function nM2" ~/.claude/local/node_modules/@anthropic-ai/claude-code/cli.js
+# Check CL2 patch
+grep -n "function CL2" ~/.claude/local/node_modules/@anthropic-ai/claude-code/cli.js
 
-# Should show: function nM2({streamMode:A}){return null}
+# Should show: function CL2({streamMode:A}){return null}
 
 # Check thinking visibility patch
-grep -n 'case"thinking":return y3.createElement(J29' ~/.claude/local/node_modules/@anthropic-ai/claude-code/cli.js
+grep -n 'case"thinking":return v3.createElement(b29' ~/.claude/local/node_modules/@anthropic-ai/claude-code/cli.js
 
-# Should show: case"thinking":return y3.createElement(J29,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:G});
+# Should show: case"thinking":return v3.createElement(b29,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:G});
 ```
 
 ## Troubleshooting
@@ -399,11 +401,11 @@ $(which claude) → resolve symlinks → find cli.js
 
 ### Why Two Patches?
 
-1. **nM2 Function:** Controls the UI banner shown after thinking completes
+1. **CL2 Function:** Controls the UI banner shown after thinking completes
 2. **Thinking Renderer:** Controls whether the actual thinking text is displayed
 
 Both must be patched because they're separate systems:
-- Patching only nM2 → Blank line appears where thinking should be
+- Patching only CL2 → Blank line appears where thinking should be
 - Patching only the renderer → Banner still shows "ctrl+o to show"
 
 ### Pattern Evolution Across Versions
@@ -434,6 +436,7 @@ The minified code patterns change with each Claude Code update:
 | 2.0.46  | `Et2`          | `T32`     | `K,Z` check |
 | 2.0.53  | `hq2`          | `o09`     | `K,G` check |
 | 2.0.55  | `nM2`          | `J29`     | `K,G` check |
+| 2.0.56  | `CL2`          | `b29`     | `K,G` check |
 
 When Claude Code updates, function names and component identifiers are regenerated during minification. In some cases (like v2.0.29), the patterns remain unchanged.
 
@@ -442,7 +445,7 @@ When Claude Code updates, function names and component identifiers are regenerat
 1. **Breaks on updates:** Must re-run after `claude update`
 2. **Minified code:** Fragile, patterns may change with version updates
 3. **No official config:** This is a workaround until Anthropic adds a native setting
-4. **Version-specific:** Patterns are specific to v2.0.55
+4. **Version-specific:** Patterns are specific to v2.0.56
 
 ## Feature Request
 
@@ -660,8 +663,8 @@ Developed through analysis of Claude Code's compiled JavaScript. Special thanks 
 
 ---
 
-**Last Updated:** 2025-11-27
-**Claude Code Version:** 2.0.55
+**Last Updated:** 2025-12-02
+**Claude Code Version:** 2.0.56
 **Status:** ✅ Working
 
 ### Quick Reference
