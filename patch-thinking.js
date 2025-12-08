@@ -13,7 +13,7 @@ const showHelp = args.includes('--help') || args.includes('-h');
 
 // Display help
 if (showHelp) {
-  console.log('Claude Code Thinking Visibility Patcher v2.0.59');
+  console.log('Claude Code Thinking Visibility Patcher v2.0.61');
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
   console.log('Options:');
@@ -27,7 +27,7 @@ if (showHelp) {
   process.exit(0);
 }
 
-console.log('Claude Code Thinking Visibility Patcher v2.0.59');
+console.log('Claude Code Thinking Visibility Patcher v2.0.61');
 console.log('==============================================\n');
 
 // Helper function to safely execute shell commands
@@ -176,15 +176,15 @@ if (!fs.existsSync(targetPath)) {
 
 let content = fs.readFileSync(targetPath, 'utf8');
 
-// Patch 1: DO2 Banner Removal (v2.0.59)
-// Note: Changed from SM2 (v2.0.58) to DO2 (v2.0.59), CRA/MP namespaces
-const bannerSearchPattern = 'function DO2({streamMode:A}){let[Q,B]=CRA.useState(null),[G,Z]=CRA.useState(null);if(CRA.useEffect(()=>{if(A==="thinking"&&Q===null)B(Date.now());else if(A!=="thinking"&&Q!==null)Z(Date.now()-Q),B(null)},[A,Q]),A==="thinking")return MP.createElement(S,{marginTop:1},MP.createElement($,{dimColor:!0},"∴ Thinking…"));if(G!==null)return MP.createElement(S,{marginTop:1},MP.createElement($,{dimColor:!0},"∴ Thought for ",Math.max(1,Math.round(G/1000)),"s (",MP.createElement($,{dimColor:!0,bold:!0},"ctrl+o")," ","to show thinking)"));return null}';
-const bannerReplacement = 'function DO2({streamMode:A}){return null}';
+// Patch 1: RR2 Banner Removal (v2.0.61)
+// Note: Changed from DO2 (v2.0.59) to RR2 (v2.0.61), vTA/rj namespaces, P container
+const bannerSearchPattern = 'function RR2({streamMode:A}){let[Q,B]=vTA.useState(null),[G,Z]=vTA.useState(null);if(vTA.useEffect(()=>{if(A==="thinking"&&Q===null)B(Date.now());else if(A!=="thinking"&&Q!==null)Z(Date.now()-Q),B(null)},[A,Q]),A==="thinking")return rj.createElement(P,{marginTop:1},rj.createElement($,{dimColor:!0},"∴ Thinking…"));if(G!==null)return rj.createElement(P,{marginTop:1},rj.createElement($,{dimColor:!0},"∴ Thought for ",Math.max(1,Math.round(G/1000)),"s (",rj.createElement($,{dimColor:!0,bold:!0},"ctrl+o")," ","to show thinking)"));return null}';
+const bannerReplacement = 'function RR2({streamMode:A}){return null}';
 
-// Patch 2: Thinking Visibility (v2.0.59)
-// Note: Changed from k49 (v2.0.58) to F89 (v2.0.59), b3 to u3
-const thinkingSearchPattern = 'case"thinking":if(!K&&!G)return null;return u3.createElement(F89,{addMargin:Q,param:A,isTranscriptMode:K,verbose:G});';
-const thinkingReplacement = 'case"thinking":return u3.createElement(F89,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:G});';
+// Patch 2: Thinking Visibility (v2.0.61)
+// Note: Changed from F89 (v2.0.59) to T69 (v2.0.61), u3 to A3, K to F
+const thinkingSearchPattern = 'case"thinking":if(!F&&!G)return null;return A3.createElement(T69,{addMargin:Q,param:A,isTranscriptMode:F,verbose:G});';
+const thinkingReplacement = 'case"thinking":return A3.createElement(T69,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:G});';
 
 let patch1Applied = false;
 let patch2Applied = false;
@@ -192,7 +192,7 @@ let patch2Applied = false;
 // Check if patches can be applied
 console.log('Checking patches...\n');
 
-console.log('Patch 1: DO2 banner removal');
+console.log('Patch 1: RR2 banner removal');
 if (content.includes(bannerSearchPattern)) {
   patch1Applied = true;
   console.log('  ✅ Pattern found - ready to apply');
@@ -245,7 +245,7 @@ console.log('\nApplying patches...');
 // Apply Patch 1
 if (patch1Applied) {
   content = content.replace(bannerSearchPattern, bannerReplacement);
-  console.log('✅ Patch 1 applied: DO2 function now returns null');
+  console.log('✅ Patch 1 applied: RR2 function now returns null');
 }
 
 // Apply Patch 2

@@ -22,7 +22,7 @@ Claude Code collapses thinking blocks by default, showing only:
 
 You have to press `ctrl+o` every time to see the actual thinking content. This patch makes thinking blocks visible inline automatically.
 
-**Current Version:** Claude Code 2.0.59 (Updated 2025-12-05)
+**Current Version:** Claude Code 2.0.61 (Updated 2025-12-08)
 
 ## Quick Start
 
@@ -106,6 +106,7 @@ function GkQ({streamMode:A}){return null}
 - v2.0.57: Renamed to `HM2`, uses `EP.createElement`, `oOA.useState`
 - v2.0.58: Renamed to `SM2`, uses `$P.createElement`, `GRA.useState`
 - v2.0.59: Renamed to `DO2`, uses `MP.createElement`, `CRA.useState`
+- v2.0.61: Renamed to `RR2`, uses `rj.createElement`, `vTA.useState`, `P` container
 
 ### Patch 2: Force Thinking Visibility (v2.0.46)
 **Before:**
@@ -149,11 +150,12 @@ case"thinking":
 - v2.0.57: Changed to `K49` component, `v3`→`b3` variable, checks `K` and `G`
 - v2.0.58: Changed to `k49` component (lowercase k), `b3` variable, checks `K` and `G`
 - v2.0.59: Changed to `F89` component, `u3` variable, checks `K` and `G`
+- v2.0.61: Changed to `T69` component, `A3` variable, checks `F` and `G`
 
 ## Installation
 
 ### Prerequisites
-- Claude Code v2.0.59 installed
+- Claude Code v2.0.61 installed
 - Node.js (comes with Claude Code installation)
 
 ### Install Steps
@@ -261,18 +263,18 @@ Then restart Claude Code.
 
 ## Verification
 
-Check if patches are applied (for v2.0.59):
+Check if patches are applied (for v2.0.61):
 
 ```bash
-# Check DO2 patch
-grep -n "function DO2" ~/.claude/local/node_modules/@anthropic-ai/claude-code/cli.js
+# Check RR2 patch
+grep -n "function RR2" ~/.claude/local/node_modules/@anthropic-ai/claude-code/cli.js
 
-# Should show: function DO2({streamMode:A}){return null}
+# Should show: function RR2({streamMode:A}){return null}
 
 # Check thinking visibility patch
-grep -n 'case"thinking":return u3.createElement(F89' ~/.claude/local/node_modules/@anthropic-ai/claude-code/cli.js
+grep -n 'case"thinking":return A3.createElement(T69' ~/.claude/local/node_modules/@anthropic-ai/claude-code/cli.js
 
-# Should show: case"thinking":return u3.createElement(F89,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:G});
+# Should show: case"thinking":return A3.createElement(T69,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:G});
 ```
 
 ## Troubleshooting
@@ -446,6 +448,7 @@ The minified code patterns change with each Claude Code update:
 | 2.0.57  | `HM2`          | `K49`     | `K,G` check |
 | 2.0.58  | `SM2`          | `k49`     | `K,G` check |
 | 2.0.59  | `DO2`          | `F89`     | `K,G` check |
+| 2.0.61  | `RR2`          | `T69`     | `F,G` check |
 
 When Claude Code updates, function names and component identifiers are regenerated during minification. In some cases (like v2.0.29), the patterns remain unchanged.
 
@@ -454,7 +457,7 @@ When Claude Code updates, function names and component identifiers are regenerat
 1. **Breaks on updates:** Must re-run after `claude update`
 2. **Minified code:** Fragile, patterns may change with version updates
 3. **No official config:** This is a workaround until Anthropic adds a native setting
-4. **Version-specific:** Patterns are specific to v2.0.59
+4. **Version-specific:** Patterns are specific to v2.0.61
 
 ## Feature Request
 
@@ -672,8 +675,8 @@ Developed through analysis of Claude Code's compiled JavaScript. Special thanks 
 
 ---
 
-**Last Updated:** 2025-12-05
-**Claude Code Version:** 2.0.59
+**Last Updated:** 2025-12-08
+**Claude Code Version:** 2.0.61
 **Status:** ✅ Working
 
 ### Quick Reference
