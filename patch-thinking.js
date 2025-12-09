@@ -13,7 +13,7 @@ const showHelp = args.includes('--help') || args.includes('-h');
 
 // Display help
 if (showHelp) {
-  console.log('Claude Code Thinking Visibility Patcher v2.0.61');
+  console.log('Claude Code Thinking Visibility Patcher v2.0.62');
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
   console.log('Options:');
@@ -27,7 +27,7 @@ if (showHelp) {
   process.exit(0);
 }
 
-console.log('Claude Code Thinking Visibility Patcher v2.0.61');
+console.log('Claude Code Thinking Visibility Patcher v2.0.62');
 console.log('==============================================\n');
 
 // Helper function to safely execute shell commands

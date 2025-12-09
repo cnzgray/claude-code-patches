@@ -22,7 +22,7 @@ Claude Code collapses thinking blocks by default, showing only:
 
 You have to press `ctrl+o` every time to see the actual thinking content. This patch makes thinking blocks visible inline automatically.
 
-**Current Version:** Claude Code 2.0.61 (Updated 2025-12-08)
+**Current Version:** Claude Code 2.0.62 (Updated 2025-12-09)
 
 ## Quick Start
 
@@ -107,6 +107,7 @@ function GkQ({streamMode:A}){return null}
 - v2.0.58: Renamed to `SM2`, uses `$P.createElement`, `GRA.useState`
 - v2.0.59: Renamed to `DO2`, uses `MP.createElement`, `CRA.useState`
 - v2.0.61: Renamed to `RR2`, uses `rj.createElement`, `vTA.useState`, `P` container
+- v2.0.62: Renamed to `ZT2`, uses `GP.createElement`, `rTA.useState`, `P` container
 
 ### Patch 2: Force Thinking Visibility (v2.0.46)
 **Before:**
@@ -151,11 +152,12 @@ case"thinking":
 - v2.0.58: Changed to `k49` component (lowercase k), `b3` variable, checks `K` and `G`
 - v2.0.59: Changed to `F89` component, `u3` variable, checks `K` and `G`
 - v2.0.61: Changed to `T69` component, `A3` variable, checks `F` and `G`
+- v2.0.62: Changed to `X59` component, `J3` variable, checks `F` and `G`
 
 ## Installation
 
 ### Prerequisites
-- Claude Code v2.0.61 installed
+- Claude Code v2.0.62 installed
 - Node.js (comes with Claude Code installation)
 
 ### Install Steps
@@ -449,6 +451,7 @@ The minified code patterns change with each Claude Code update:
 | 2.0.58  | `SM2`          | `k49`     | `K,G` check |
 | 2.0.59  | `DO2`          | `F89`     | `K,G` check |
 | 2.0.61  | `RR2`          | `T69`     | `F,G` check |
+| 2.0.62  | `ZT2`          | `X59`     | `F,G` check |
 
 When Claude Code updates, function names and component identifiers are regenerated during minification. In some cases (like v2.0.29), the patterns remain unchanged.
 
@@ -457,7 +460,7 @@ When Claude Code updates, function names and component identifiers are regenerat
 1. **Breaks on updates:** Must re-run after `claude update`
 2. **Minified code:** Fragile, patterns may change with version updates
 3. **No official config:** This is a workaround until Anthropic adds a native setting
-4. **Version-specific:** Patterns are specific to v2.0.61
+4. **Version-specific:** Patterns are specific to v2.0.62
 
 ## Feature Request
 
@@ -675,8 +678,8 @@ Developed through analysis of Claude Code's compiled JavaScript. Special thanks 
 
 ---
 
-**Last Updated:** 2025-12-08
-**Claude Code Version:** 2.0.61
+**Last Updated:** 2025-12-09
+**Claude Code Version:** 2.0.62
 **Status:** ✅ Working
 
 ### Quick Reference
