@@ -13,7 +13,7 @@ const showHelp = args.includes('--help') || args.includes('-h');
 
 // Display help
 if (showHelp) {
-  console.log('Claude Code Thinking Visibility Patcher v2.0.62');
+  console.log('Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76)');
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
   console.log('Options:');
@@ -27,7 +27,7 @@ if (showHelp) {
   process.exit(0);
 }
 
-console.log('Claude Code Thinking Visibility Patcher v2.0.62');
+console.log('Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76)');
 console.log('==============================================\n');
 
 // Helper function to safely execute shell commands
@@ -99,7 +99,15 @@ function getClaudeCodePath() {
       try {
         // Resolve symlinks
         const realBinary = fs.realpathSync(claudeBinary);
-        // Navigate from bin/claude to lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+        // Some installs (e.g. nvs) symlink `claude` directly to `cli.js`.
+        // In that case, treat it as the target file instead of deriving a lib/ path.
+        if (realBinary.endsWith(path.join('@anthropic-ai', 'claude-code', 'cli.js'))) {
+          const foundDirect = checkPath(realBinary, 'which claude (direct cli.js)');
+          if (foundDirect) return foundDirect;
+        }
+
+        // Otherwise, navigate from bin/claude to lib/node_modules/@anthropic-ai/claude-code/cli.js
         const binDir = path.dirname(realBinary);
         const nodeModulesPath = path.join(binDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
         const foundFromBinary = checkPath(nodeModulesPath, 'which claude');
@@ -176,40 +184,171 @@ if (!fs.existsSync(targetPath)) {
 
 let content = fs.readFileSync(targetPath, 'utf8');
 
-// Patch 1: ZT2 Banner Removal (v2.0.62)
-// Note: Changed from RR2 (v2.0.61) to ZT2 (v2.0.62), rTA/GP namespaces, P container
-const bannerSearchPattern = 'function ZT2({streamMode:A}){let[Q,B]=rTA.useState(null),[G,Z]=rTA.useState(null);if(rTA.useEffect(()=>{if(A==="thinking"&&Q===null)B(Date.now());else if(A!=="thinking"&&Q!==null)Z(Date.now()-Q),B(null)},[A,Q]),A==="thinking")return GP.createElement(P,{marginTop:1},GP.createElement($,{dimColor:!0},"∴ Thinking…"));if(G!==null)return GP.createElement(P,{marginTop:1},GP.createElement($,{dimColor:!0},"∴ Thought for ",Math.max(1,Math.round(G/1000)),"s (",GP.createElement($,{dimColor:!0,bold:!0},"ctrl+o")," ","to show thinking)"));return null}';
-const bannerReplacement = 'function ZT2({streamMode:A}){return null}';
+// Patch patterns by Claude Code version.
+// We keep exact-string matching because cli.js is heavily minified and patterns are version-specific.
 
-// Patch 2: Thinking Visibility (v2.0.62)
-// Note: Changed from T69 (v2.0.61) to X59 (v2.0.62), A3 to J3
-const thinkingSearchPattern = 'case"thinking":if(!F&&!G)return null;return J3.createElement(X59,{addMargin:Q,param:A,isTranscriptMode:F,verbose:G});';
-const thinkingReplacement = 'case"thinking":return J3.createElement(X59,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:G});';
+// Patch 1: Remove the old collapsed thinking banner (present in older versions; kept for v2.0.62).
+const bannerSearchPattern_v2062 =
+  'function ZT2({streamMode:A}){let[Q,B]=rTA.useState(null),[G,Z]=rTA.useState(null);if(rTA.useEffect(()=>{if(A==="thinking"&&Q===null)B(Date.now());else if(A!=="thinking"&&Q!==null)Z(Date.now()-Q),B(null)},[A,Q]),A==="thinking")return GP.createElement(P,{marginTop:1},GP.createElement($,{dimColor:!0},"∴ Thinking…"));if(G!==null)return GP.createElement(P,{marginTop:1},GP.createElement($,{dimColor:!0},"∴ Thought for ",Math.max(1,Math.round(G/1000)),"s (",GP.createElement($,{dimColor:!0,bold:!0},"ctrl+o")," ","to show thinking)"));return null}';
+const bannerReplacement_v2062 = 'function ZT2({streamMode:A}){return null}';
+
+// Patch 2a: Force thinking visibility at the "case \"thinking\"" call site (v2.0.62).
+const thinkingSearchPattern_v2062 =
+  'case"thinking":if(!F&&!G)return null;return J3.createElement(X59,{addMargin:Q,param:A,isTranscriptMode:F,verbose:G});';
+const thinkingReplacement_v2062 =
+  'case"thinking":return J3.createElement(X59,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:G});';
+
+// Patch 2b: Force thinking visibility (v2.0.74 / v2.0.75).
+// In 2.0.74 and 2.0.75, thinking visibility is controlled in two places:
+// 1) The message renderer call site can short-circuit and return null (hiding thinking entirely)
+// 2) The thinking renderer (`co2`) can show a collapsed banner branch
+//
+// We patch both, so thinking renders inline by default (without ctrl+o).
+const redactedThinkingCallsiteSearchPattern_v2074 =
+  'case"redacted_thinking":if(!D&&!Z)return null;return J5.createElement(io2,{addMargin:Q});';
+const redactedThinkingCallsiteReplacement_v2074 = 'case"redacted_thinking":return J5.createElement(io2,{addMargin:Q});';
+const thinkingCallsiteSearchPattern_v2074 =
+  'case"thinking":if(!D&&!Z)return null;return J5.createElement(co2,{addMargin:Q,param:A,isTranscriptMode:D,verbose:Z});';
+const thinkingCallsiteReplacement_v2074 =
+  'case"thinking":return J5.createElement(co2,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:Z});';
+//
+// Note: we keep two exact-string variants because Anthropic occasionally tweaks the collapsed branch
+// while keeping the expanded rendering stable.
+const thinkingRendererSearchPattern_v2074_variantCollapsedBanner =
+  'function co2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;if(!(B||G))return Vs.default.createElement(T,{marginTop:Q?1:0},Vs.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking (ctrl+o to expand)"));return Vs.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},Vs.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking…"),Vs.default.createElement(T,{paddingLeft:2},Vs.default.createElement(C,{dimColor:!0,italic:!0},Vs.default.createElement(T$,null,A))))}';
+const thinkingRendererSearchPattern_v2074_variantNullGate =
+  'function co2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;if(!(B||G))return null;return Vs.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},Vs.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking…"),Vs.default.createElement(T,{paddingLeft:2},Vs.default.createElement(C,{dimColor:!0,italic:!0},Vs.default.createElement(T$,null,A))))}';
+const thinkingRendererReplacement_v2074 =
+  'function co2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;return Vs.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},Vs.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking…"),Vs.default.createElement(T,{paddingLeft:2},Vs.default.createElement(C,{dimColor:!0,italic:!0},Vs.default.createElement(T$,null,A))))}';
+
+// Patch 2d: Force thinking visibility (v2.0.76).
+// In 2.0.76, the identifiers changed:
+// - thinking renderer: `lo2` (was `co2`)
+// - redacted_thinking renderer: `no2` (was `io2`)
+//
+// The visibility logic is otherwise identical to 2.0.74/2.0.75 (call-site gate + collapsed banner branch).
+const redactedThinkingCallsiteSearchPattern_v2076 =
+  'case"redacted_thinking":if(!D&&!Z)return null;return J5.createElement(no2,{addMargin:Q});';
+const redactedThinkingCallsiteReplacement_v2076 = 'case"redacted_thinking":return J5.createElement(no2,{addMargin:Q});';
+const thinkingCallsiteSearchPattern_v2076 =
+  'case"thinking":if(!D&&!Z)return null;return J5.createElement(lo2,{addMargin:Q,param:A,isTranscriptMode:D,verbose:Z});';
+const thinkingCallsiteReplacement_v2076 =
+  'case"thinking":return J5.createElement(lo2,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:Z});';
+const thinkingRendererSearchPattern_v2076_variantCollapsedBanner =
+  'function lo2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;if(!(B||G))return Vs.default.createElement(T,{marginTop:Q?1:0},Vs.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking (ctrl+o to expand)"));return Vs.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},Vs.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking…"),Vs.default.createElement(T,{paddingLeft:2},Vs.default.createElement(C,{dimColor:!0,italic:!0},Vs.default.createElement(T$,null,A))))}';
+const thinkingRendererSearchPattern_v2076_variantNullGate =
+  'function lo2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;if(!(B||G))return null;return Vs.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},Vs.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking…"),Vs.default.createElement(T,{paddingLeft:2},Vs.default.createElement(C,{dimColor:!0,italic:!0},Vs.default.createElement(T$,null,A))))}';
+const thinkingRendererReplacement_v2076 =
+  'function lo2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;return Vs.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},Vs.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking…"),Vs.default.createElement(T,{paddingLeft:2},Vs.default.createElement(C,{dimColor:!0,italic:!0},Vs.default.createElement(T$,null,A))))}';
+
+// Patch 2c: Force thinking visibility (v2.0.71).
+// In 2.0.71 the thinking renderer function is `mn2` and uses different minified identifiers.
+const thinkingRendererSearchPattern_v2071_variantCollapsedBanner =
+  'function mn2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;if(!(B||G))return nr.default.createElement(T,{marginTop:Q?1:0},nr.default.createElement(z,{dimColor:!0,italic:!0},"∴ Thinking (ctrl+o to expand)"));return nr.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},nr.default.createElement(z,{dimColor:!0,italic:!0},"∴ Thinking…"),nr.default.createElement(T,{paddingLeft:2},nr.default.createElement(z,{dimColor:!0,italic:!0},nr.default.createElement(fE,null,A))))}';
+const thinkingRendererSearchPattern_v2071_variantNullGate =
+  'function mn2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;if(!(B||G))return null;return nr.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},nr.default.createElement(z,{dimColor:!0,italic:!0},"∴ Thinking…"),nr.default.createElement(T,{paddingLeft:2},nr.default.createElement(z,{dimColor:!0,italic:!0},nr.default.createElement(fE,null,A))))}';
+const thinkingRendererReplacement_v2071 =
+  'function mn2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;return nr.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},nr.default.createElement(z,{dimColor:!0,italic:!0},"∴ Thinking…"),nr.default.createElement(T,{paddingLeft:2},nr.default.createElement(z,{dimColor:!0,italic:!0},nr.default.createElement(fE,null,A))))}';
 
 let patch1Applied = false;
 let patch2Applied = false;
+const patch2PlannedSteps = [];
 
 // Check if patches can be applied
 console.log('Checking patches...\n');
 
-console.log('Patch 1: ZT2 banner removal');
-if (content.includes(bannerSearchPattern)) {
+console.log('Patch 1: collapsed thinking banner removal (older versions)');
+if (content.includes(bannerSearchPattern_v2062)) {
   patch1Applied = true;
-  console.log('  ✅ Pattern found - ready to apply');
-} else if (content.includes(bannerReplacement)) {
+  console.log('  ✅ Pattern found (v2.0.62) - ready to apply');
+} else if (content.includes(bannerReplacement_v2062)) {
   console.log('  ⚠️  Already applied');
 } else {
-  console.log('  ❌ Pattern not found - may need update for newer version');
+  console.log('  ℹ️  Not applicable / pattern not found');
 }
 
-console.log('\nPatch 2: Thinking visibility');
-if (content.includes(thinkingSearchPattern)) {
+console.log('\nPatch 2: thinking visibility');
+if (content.includes(thinkingSearchPattern_v2062)) {
   patch2Applied = true;
-  console.log('  ✅ Pattern found - ready to apply');
-} else if (content.includes(thinkingReplacement)) {
-  console.log('  ⚠️  Already applied');
+  patch2PlannedSteps.push('v2.0.62 call site');
+} else if (content.includes(thinkingReplacement_v2062)) {
+  console.log('  ⚠️  Already applied (v2.0.62 call site)');
+}
+
+if (content.includes(redactedThinkingCallsiteSearchPattern_v2074)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.0.74 redacted_thinking call site');
+} else if (content.includes(redactedThinkingCallsiteReplacement_v2074)) {
+  console.log('  ⚠️  Already applied (v2.0.74 redacted_thinking call site)');
+}
+
+if (content.includes(thinkingCallsiteSearchPattern_v2074)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.0.74 thinking call site');
+} else if (content.includes(thinkingCallsiteReplacement_v2074)) {
+  console.log('  ⚠️  Already applied (v2.0.74 thinking call site)');
+}
+
+if (
+  content.includes(thinkingRendererSearchPattern_v2074_variantCollapsedBanner) ||
+  content.includes(thinkingRendererSearchPattern_v2074_variantNullGate)
+) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.0.74 thinking renderer');
+} else if (content.includes(thinkingRendererReplacement_v2074)) {
+  console.log('  ⚠️  Already applied (v2.0.74 thinking renderer)');
+}
+
+if (content.includes(redactedThinkingCallsiteSearchPattern_v2076)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.0.76 redacted_thinking call site');
+} else if (content.includes(redactedThinkingCallsiteReplacement_v2076)) {
+  console.log('  ⚠️  Already applied (v2.0.76 redacted_thinking call site)');
+}
+
+if (content.includes(thinkingCallsiteSearchPattern_v2076)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.0.76 thinking call site');
+} else if (content.includes(thinkingCallsiteReplacement_v2076)) {
+  console.log('  ⚠️  Already applied (v2.0.76 thinking call site)');
+}
+
+if (
+  content.includes(thinkingRendererSearchPattern_v2076_variantCollapsedBanner) ||
+  content.includes(thinkingRendererSearchPattern_v2076_variantNullGate)
+) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.0.76 thinking renderer');
+} else if (content.includes(thinkingRendererReplacement_v2076)) {
+  console.log('  ⚠️  Already applied (v2.0.76 thinking renderer)');
+}
+
+if (
+  content.includes(thinkingRendererSearchPattern_v2071_variantCollapsedBanner) ||
+  content.includes(thinkingRendererSearchPattern_v2071_variantNullGate)
+) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.0.71 thinking renderer');
+} else if (content.includes(thinkingRendererReplacement_v2071)) {
+  console.log('  ⚠️  Already applied (v2.0.71 thinking renderer)');
+}
+
+if (patch2PlannedSteps.length > 0) {
+  console.log(`  ✅ Pattern found (${patch2PlannedSteps.join(', ')}) - ready to apply`);
 } else {
-  console.log('  ❌ Pattern not found - may need update for newer version');
+  const patch2AlreadyApplied =
+    content.includes(thinkingReplacement_v2062) ||
+    content.includes(redactedThinkingCallsiteReplacement_v2074) ||
+    content.includes(thinkingCallsiteReplacement_v2074) ||
+    content.includes(thinkingRendererReplacement_v2074) ||
+    content.includes(redactedThinkingCallsiteReplacement_v2076) ||
+    content.includes(thinkingCallsiteReplacement_v2076) ||
+    content.includes(thinkingRendererReplacement_v2076) ||
+    content.includes(thinkingRendererReplacement_v2071);
+
+  if (!patch2AlreadyApplied) {
+    console.log('  ❌ Pattern not found - may need update for newer version');
+  }
 }
 
 // Dry run mode - just preview
@@ -244,14 +383,66 @@ console.log('\nApplying patches...');
 
 // Apply Patch 1
 if (patch1Applied) {
-  content = content.replace(bannerSearchPattern, bannerReplacement);
+  content = content.replace(bannerSearchPattern_v2062, bannerReplacement_v2062);
   console.log('✅ Patch 1 applied: ZT2 function now returns null');
 }
 
 // Apply Patch 2
 if (patch2Applied) {
-  content = content.replace(thinkingSearchPattern, thinkingReplacement);
-  console.log('✅ Patch 2 applied: thinking content forced visible');
+  if (content.includes(thinkingSearchPattern_v2062)) {
+    content = content.replace(thinkingSearchPattern_v2062, thinkingReplacement_v2062);
+    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.62 call site)');
+  }
+
+  if (content.includes(redactedThinkingCallsiteSearchPattern_v2074)) {
+    content = content.replace(redactedThinkingCallsiteSearchPattern_v2074, redactedThinkingCallsiteReplacement_v2074);
+    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.0.74 call site)');
+  }
+
+  if (content.includes(thinkingCallsiteSearchPattern_v2074)) {
+    content = content.replace(thinkingCallsiteSearchPattern_v2074, thinkingCallsiteReplacement_v2074);
+    console.log('✅ Patch 2 applied: thinking forced visible (v2.0.74 call site)');
+  }
+
+  if (content.includes(thinkingRendererSearchPattern_v2074_variantCollapsedBanner)) {
+    content = content.replace(thinkingRendererSearchPattern_v2074_variantCollapsedBanner, thinkingRendererReplacement_v2074);
+    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.74 thinking renderer)');
+  }
+
+  if (content.includes(thinkingRendererSearchPattern_v2074_variantNullGate)) {
+    content = content.replace(thinkingRendererSearchPattern_v2074_variantNullGate, thinkingRendererReplacement_v2074);
+    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.74 thinking renderer)');
+  }
+
+  if (content.includes(redactedThinkingCallsiteSearchPattern_v2076)) {
+    content = content.replace(redactedThinkingCallsiteSearchPattern_v2076, redactedThinkingCallsiteReplacement_v2076);
+    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.0.76 call site)');
+  }
+
+  if (content.includes(thinkingCallsiteSearchPattern_v2076)) {
+    content = content.replace(thinkingCallsiteSearchPattern_v2076, thinkingCallsiteReplacement_v2076);
+    console.log('✅ Patch 2 applied: thinking forced visible (v2.0.76 call site)');
+  }
+
+  if (content.includes(thinkingRendererSearchPattern_v2076_variantCollapsedBanner)) {
+    content = content.replace(thinkingRendererSearchPattern_v2076_variantCollapsedBanner, thinkingRendererReplacement_v2076);
+    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.76 thinking renderer)');
+  }
+
+  if (content.includes(thinkingRendererSearchPattern_v2076_variantNullGate)) {
+    content = content.replace(thinkingRendererSearchPattern_v2076_variantNullGate, thinkingRendererReplacement_v2076);
+    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.76 thinking renderer)');
+  }
+
+  if (content.includes(thinkingRendererSearchPattern_v2071_variantCollapsedBanner)) {
+    content = content.replace(thinkingRendererSearchPattern_v2071_variantCollapsedBanner, thinkingRendererReplacement_v2071);
+    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.71 thinking renderer)');
+  }
+
+  if (content.includes(thinkingRendererSearchPattern_v2071_variantNullGate)) {
+    content = content.replace(thinkingRendererSearchPattern_v2071_variantNullGate, thinkingRendererReplacement_v2071);
+    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.71 thinking renderer)');
+  }
 }
 
 // Write file
