@@ -15,14 +15,20 @@ Make Claude Code's thinking blocks visible by default without pressing `ctrl+o`.
 
 ## The Problem
 
-Claude Code collapses thinking blocks by default, showing only:
+Claude Code collapses (or hides) thinking by default. In v2.0.74 / v2.0.75 / v2.0.76 you may see a collapsed banner like:
 ```
-∴ Thought for 3s (ctrl+o to show thinking)
+∴ Thinking (ctrl+o to expand)
 ```
+
+And the spinner/status line may show timing hints like `thinking` / `thought for 1s` (this is separate UI from the thinking block).
 
 You have to press `ctrl+o` every time to see the actual thinking content. This patch makes thinking blocks visible inline automatically.
 
-**Current Version:** Claude Code 2.0.62 (Updated 2025-12-09)
+**Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
+
+**Current Version:** Claude Code 2.0.76 (Updated 2025-12-23)
+
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76
 
 ## Quick Start
 
@@ -45,10 +51,10 @@ That's it! Thinking blocks now display inline without `ctrl+o`.
 
 ## What This Patch Does
 
-**Before:**
+**Before (v2.0.74 / v2.0.75 / v2.0.76):**
 ```
-∴ Thought for 3s (ctrl+o to show thinking)
-[thinking content hidden]
+∴ Thinking (ctrl+o to expand)
+[thinking content collapsed]
 ```
 
 **After:**
@@ -62,7 +68,7 @@ That's it! Thinking blocks now display inline without `ctrl+o`.
 
 ## How It Works
 
-This patch modifies two locations in Claude Code's compiled JavaScript:
+This patch modifies Claude Code's compiled JavaScript (the exact hook point depends on version):
 
 ### Patch 1: Remove the Banner (v2.0.30)
 **Before:**
@@ -154,10 +160,53 @@ case"thinking":
 - v2.0.61: Changed to `T69` component, `A3` variable, checks `F` and `G`
 - v2.0.62: Changed to `X59` component, `J3` variable, checks `F` and `G`
 
+### Patch 2b: Force Thinking Visibility (v2.0.74 / v2.0.75 / v2.0.76)
+In v2.0.74 / v2.0.75 / v2.0.76 thinking visibility is controlled in **two places**:
+
+1) The **message renderer call site** can short-circuit and hide thinking unless transcript mode / verbose is enabled.
+2) The **thinking renderer** (`co2` in 2.0.74/2.0.75, `lo2` in 2.0.76) can render a collapsed banner instead of the full thinking content.
+
+This patcher updates both so thinking renders inline by default (no `ctrl+o` needed).
+
+#### 1) Call Site: Remove the Gate
+
+**Before:**
+```javascript
+case"thinking":if(!D&&!Z)return null;
+return J5.createElement(co2,{addMargin:Q,param:A,isTranscriptMode:D,verbose:Z});
+```
+
+**After:**
+```javascript
+case"thinking":
+return J5.createElement(co2,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:Z});
+```
+
+#### 2) Renderer: Always Render Expanded Thinking
+
+**Before:**
+```javascript
+function co2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){
+  if(!A)return null;
+  if(!(B||G))return ... "∴ Thinking (ctrl+o to expand)";
+  return ... "∴ Thinking…" + thinking text ...
+}
+```
+
+**After:**
+```javascript
+function co2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){
+  if(!A)return null;
+  return ... "∴ Thinking…" + thinking text ...
+}
+```
+
+**Effect:** Removes the collapsed banner branch and always renders the full thinking content inline.
+
 ## Installation
 
 ### Prerequisites
-- Claude Code v2.0.62 installed
+- Claude Code v2.0.62 / v2.0.71 / v2.0.74 / v2.0.75 / v2.0.76 installed
 - Node.js (comes with Claude Code installation)
 
 ### Install Steps
@@ -265,7 +314,50 @@ Then restart Claude Code.
 
 ## Verification
 
-Check if patches are applied (for v2.0.62):
+Check if patches are applied:
+
+### v2.0.76
+
+```bash
+# Should NOT include the collapsed banner text:
+grep -n '∴ Thinking (ctrl+o to expand)' ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include a thinking call site that always renders lo2():
+grep -n 'case"thinking":return J5.createElement(lo2,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:Z});' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include a lo2() that immediately returns the expanded renderer:
+grep -n 'function lo2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;return Vs.default.createElement(T,{flexDirection:"column"' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+```
+
+### v2.0.74 / v2.0.75
+
+```bash
+# Should NOT include the collapsed banner text:
+grep -n '∴ Thinking (ctrl+o to expand)' ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include a thinking call site that always renders co2():
+grep -n 'case"thinking":return J5.createElement(co2,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:Z});' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include a co2() that immediately returns the expanded renderer:
+grep -n 'function co2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;return Vs.default.createElement(T,{flexDirection:"column"' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+```
+
+### v2.0.71
+
+```bash
+# Should NOT include the collapsed banner text:
+grep -n '∴ Thinking (ctrl+o to expand)' ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include an mn2() that immediately returns the expanded renderer:
+grep -n 'function mn2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){if(!A)return null;return nr.default.createElement(T,{flexDirection:"column"' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+```
+
+### v2.0.62
 
 ```bash
 # Check ZT2 patch
