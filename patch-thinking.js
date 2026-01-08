@@ -10,6 +10,13 @@ const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run');
 const isRestore = args.includes('--restore');
 const showHelp = args.includes('--help') || args.includes('-h');
+const fileArgIndex = args.indexOf('--file');
+const fileArgPath = fileArgIndex >= 0 ? args[fileArgIndex + 1] : null;
+
+if (fileArgIndex >= 0 && !fileArgPath) {
+  console.error('❌ Error: --file requires a path argument');
+  process.exit(1);
+}
 
 // Display help
 if (showHelp) {
@@ -19,11 +26,13 @@ if (showHelp) {
   console.log('Options:');
   console.log('  --dry-run    Preview changes without applying them');
   console.log('  --restore    Restore from backup file');
+  console.log('  --file PATH  Patch a specific cli.js file (skip auto-detection)');
   console.log('  --help, -h   Show this help message\n');
   console.log('Examples:');
   console.log('  node patch-thinking.js              # Apply patches');
   console.log('  node patch-thinking.js --dry-run    # Preview changes');
   console.log('  node patch-thinking.js --restore    # Restore original');
+  console.log('  node patch-thinking.js --file PATH  # Patch a downloaded cli.js');
   process.exit(0);
 }
 
@@ -123,7 +132,30 @@ function getClaudeCodePath() {
   return null;
 }
 
-const targetPath = getClaudeCodePath();
+function resolveTargetPath() {
+  const overridePath = fileArgPath || process.env.CLAUDE_CODE_CLI_PATH;
+  if (overridePath) {
+    const attemptedPaths = [];
+    getClaudeCodePath.attemptedPaths = attemptedPaths;
+
+    const resolved = path.resolve(overridePath);
+    attemptedPaths.push({
+      path: resolved,
+      method: fileArgPath ? '--file' : 'CLAUDE_CODE_CLI_PATH',
+    });
+
+    if (!fs.existsSync(resolved)) return null;
+    try {
+      return fs.realpathSync(resolved);
+    } catch {
+      return resolved;
+    }
+  }
+
+  return getClaudeCodePath();
+}
+
+const targetPath = resolveTargetPath();
 
 if (!targetPath) {
   console.error('❌ Error: Could not find Claude Code installation\n');

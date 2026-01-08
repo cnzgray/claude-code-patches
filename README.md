@@ -249,6 +249,9 @@ node patch-thinking.js --dry-run
 # Restore original behavior from backup
 node patch-thinking.js --restore
 
+# Patch a specific cli.js file (skip auto-detection)
+node patch-thinking.js --file /path/to/cli.js
+
 # Show help
 node patch-thinking.js --help
 ```
@@ -256,6 +259,10 @@ node patch-thinking.js --help
 ## Installation Detection
 
 The script **automatically detects** Claude Code installations using a robust 4-tier detection strategy:
+
+You can also skip auto-detection:
+- `--file /path/to/cli.js`
+- or set `CLAUDE_CODE_CLI_PATH=/path/to/cli.js`
 
 ### Detection Methods (Priority Order)
 
