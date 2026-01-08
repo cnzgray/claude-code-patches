@@ -15,7 +15,7 @@ Make Claude Code's thinking blocks visible by default without pressing `ctrl+o`.
 
 ## The Problem
 
-Claude Code collapses (or hides) thinking by default. In v2.0.74 / v2.0.75 / v2.0.76 you may see a collapsed banner like:
+Claude Code collapses (or hides) thinking by default. In v2.0.74+ (including 2.1.1) you may see a collapsed banner like:
 ```
 ∴ Thinking (ctrl+o to expand)
 ```
@@ -26,9 +26,9 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.0.76 (Updated 2025-12-23)
+**Current Version:** Claude Code 2.1.1 (Updated 2026-01-08)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1
 
 ## Quick Start
 
@@ -51,7 +51,7 @@ That's it! Thinking blocks now display inline without `ctrl+o`.
 
 ## What This Patch Does
 
-**Before (v2.0.74 / v2.0.75 / v2.0.76):**
+**Before (e.g. v2.0.74+):**
 ```
 ∴ Thinking (ctrl+o to expand)
 [thinking content collapsed]
@@ -203,10 +203,20 @@ function co2({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G}){
 
 **Effect:** Removes the collapsed banner branch and always renders the full thinking content inline.
 
+### Patch 2e: Force Thinking Visibility (v2.1.1)
+In v2.1.1 thinking visibility is still controlled in **two places**, but with slightly different logic:
+
+1) The **message renderer call site** still short-circuits and hides thinking unless transcript mode / verbose is enabled.
+2) The **thinking renderer** (`NbA`) now has *two* hiding branches:
+   - a transcript hide gate (`hideInTranscript`)
+   - the collapsed banner branch (`∴ Thinking (ctrl+o to expand)`)
+
+The patcher updates **both** so thinking renders inline by default (no `ctrl+o` needed).
+
 ## Installation
 
 ### Prerequisites
-- Claude Code v2.0.62 / v2.0.71 / v2.0.74 / v2.0.75 / v2.0.76 installed
+- Claude Code installed (tested: 2.0.62 / 2.0.71 / 2.0.74 / 2.0.75 / 2.0.76 / 2.1.1)
 - Node.js (comes with Claude Code installation)
 
 ### Install Steps
@@ -315,6 +325,23 @@ Then restart Claude Code.
 ## Verification
 
 Check if patches are applied:
+
+### v2.1.1
+
+```bash
+# Should NOT include the collapsed banner text:
+grep -n '∴ Thinking (ctrl+o to expand)' ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include call sites that never short-circuit:
+grep -nF 'case"redacted_thinking":return o8.createElement(ya2,{addMargin:Q});' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+grep -nF 'case"thinking":{return o8.createElement(NbA,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:Z,hideInTranscript:!1})}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include an NbA() that always returns the expanded renderer:
+grep -nF 'function NbA({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G,hideInTranscript:Z=!1}){if(!A)return null;return $6A.default.createElement(T,{flexDirection:"column"' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+```
 
 ### v2.0.76
 
@@ -570,6 +597,7 @@ If Claude Code updates and the patches stop working:
 
 1. **Locate the new patterns** in cli.js:
    - Search for the thinking banner function (look for "Thought for" text)
+   - Search for `∴ Thinking (ctrl+o to expand)` to find the collapsed thinking renderer branch
    - Search for `case"thinking"` to find the visibility check
 
 2. **Update the script** with new patterns
