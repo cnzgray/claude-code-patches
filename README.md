@@ -26,9 +26,9 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.1.1 (Updated 2026-01-08)
+**Current Version:** Claude Code 2.1.2 (Updated 2026-01-09)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2
 
 ## Quick Start
 
@@ -213,6 +213,16 @@ In v2.1.1 thinking visibility is still controlled in **two places**, but with sl
 
 The patcher updates **both** so thinking renders inline by default (no `ctrl+o` needed).
 
+### Patch 2f: Force Thinking Visibility (v2.1.2)
+In v2.1.2 the overall structure is the same as v2.1.1 (call-site gate + thinking renderer gate), but the compiled identifiers changed:
+
+1) The **message renderer call site** still short-circuits unless transcript mode / verbose is enabled.
+2) The **thinking renderer** is now `ybA` and still includes both:
+   - a transcript hide gate (`hideInTranscript`)
+   - the collapsed banner branch (`∴ Thinking (ctrl+o to expand)`)
+
+The patcher updates **both** so thinking renders inline by default (no `ctrl+o` needed).
+
 ## Installation
 
 ### Prerequisites
@@ -332,6 +342,23 @@ Then restart Claude Code.
 ## Verification
 
 Check if patches are applied:
+
+### v2.1.2
+
+```bash
+# Should NOT include the collapsed banner text:
+grep -n '∴ Thinking (ctrl+o to expand)' ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include call sites that never short-circuit:
+grep -nF 'case"redacted_thinking":return o8.createElement(Vo2,{addMargin:Q});' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+grep -nF 'case"thinking":{return o8.createElement(ybA,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:Z,hideInTranscript:!1})}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include a ybA() that always returns the expanded renderer:
+grep -nF 'function ybA({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G,hideInTranscript:Z=!1}){if(!A)return null;return q6A.default.createElement(T,{flexDirection:"column"' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+```
 
 ### v2.1.1
 
