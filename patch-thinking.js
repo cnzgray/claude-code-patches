@@ -21,7 +21,7 @@ if (fileArgIndex >= 0 && !fileArgPath) {
 // Display help
 if (showHelp) {
   console.log(
-    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4)'
+    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6)'
   );
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
@@ -39,7 +39,7 @@ if (showHelp) {
 }
 
 console.log(
-  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4)'
+  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6)'
 );
 console.log('==============================================\n');
 
@@ -358,6 +358,26 @@ const thinkingRendererSearchPattern_v214_variantNullGate =
   'function dvA({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G,hideInTranscript:Z=!1}){let Y=u4("app:toggleTranscript","Global","ctrl+o");if(!A)return null;if(Z)return null;if(!(B||G))return null;return s4A.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},s4A.default.createElement($,{dimColor:!0,italic:!0},"∴ Thinking…"),s4A.default.createElement(T,{paddingLeft:2},s4A.default.createElement(QV,null,A)))}';
 const thinkingRendererReplacement_v214 = thinkingRendererReplacement_v213;
 
+// Patch 2i: Force thinking visibility (v2.1.6).
+// In 2.1.6, identifiers changed again:
+// - thinking renderer: `_bA` (was `dvA`)
+// - redacted_thinking renderer: `$g2`
+// - createElement namespace: `Z5`
+// - dynamic shortcut label helper: `s6(...)`
+const redactedThinkingCallsiteSearchPattern_v216 =
+  'case"redacted_thinking":if(!F&&!Z)return null;return Z5.createElement($g2,{addMargin:Q});';
+const redactedThinkingCallsiteReplacement_v216 = 'case"redacted_thinking":return Z5.createElement($g2,{addMargin:Q});';
+const thinkingCallsiteSearchPattern_v216 =
+  'case"thinking":{if(!F&&!Z)return null;return Z5.createElement(_bA,{addMargin:Q,param:A,isTranscriptMode:F,verbose:Z,hideInTranscript:F&&!(!$||z===$)})}';
+const thinkingCallsiteReplacement_v216 =
+  'case"thinking":{return Z5.createElement(_bA,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:Z,hideInTranscript:!1})}';
+const thinkingRendererSearchPattern_v216_variantCollapsedBanner =
+  'function _bA({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G,hideInTranscript:Z=!1}){let Y=s6("app:toggleTranscript","Global","ctrl+o");if(!A)return null;if(Z)return null;if(!(B||G))return k6A.default.createElement(T,{marginTop:Q?1:0},k6A.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking (",Y," to expand)"));return k6A.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},k6A.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking…"),k6A.default.createElement(T,{paddingLeft:2},k6A.default.createElement(tK,null,A)))}';
+const thinkingRendererSearchPattern_v216_variantNullGate =
+  'function _bA({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G,hideInTranscript:Z=!1}){let Y=s6("app:toggleTranscript","Global","ctrl+o");if(!A)return null;if(Z)return null;if(!(B||G))return null;return k6A.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},k6A.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking…"),k6A.default.createElement(T,{paddingLeft:2},k6A.default.createElement(tK,null,A)))}';
+const thinkingRendererReplacement_v216 =
+  'function _bA({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G,hideInTranscript:Z=!1}){if(!A)return null;return k6A.default.createElement(T,{flexDirection:"column",gap:1,marginTop:Q?1:0,width:"100%"},k6A.default.createElement(C,{dimColor:!0,italic:!0},"∴ Thinking…"),k6A.default.createElement(T,{paddingLeft:2},k6A.default.createElement(tK,null,A)))}';
+
 let patch1Applied = false;
 let patch2Applied = false;
 const patch2PlannedSteps = [];
@@ -530,6 +550,30 @@ if (
   console.log('  ⚠️  Already applied (v2.1.4 thinking renderer)');
 }
 
+if (content.includes(redactedThinkingCallsiteSearchPattern_v216)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.1.6 redacted_thinking call site');
+} else if (content.includes(redactedThinkingCallsiteReplacement_v216)) {
+  console.log('  ⚠️  Already applied (v2.1.6 redacted_thinking call site)');
+}
+
+if (content.includes(thinkingCallsiteSearchPattern_v216)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.1.6 thinking call site');
+} else if (content.includes(thinkingCallsiteReplacement_v216)) {
+  console.log('  ⚠️  Already applied (v2.1.6 thinking call site)');
+}
+
+if (
+  content.includes(thinkingRendererSearchPattern_v216_variantCollapsedBanner) ||
+  content.includes(thinkingRendererSearchPattern_v216_variantNullGate)
+) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.1.6 thinking renderer');
+} else if (content.includes(thinkingRendererReplacement_v216)) {
+  console.log('  ⚠️  Already applied (v2.1.6 thinking renderer)');
+}
+
 if (patch2PlannedSteps.length > 0) {
   console.log(`  ✅ Pattern found (${patch2PlannedSteps.join(', ')}) - ready to apply`);
 } else {
@@ -552,7 +596,10 @@ if (patch2PlannedSteps.length > 0) {
     content.includes(thinkingCallsiteReplacement_v213) ||
     content.includes(thinkingRendererReplacement_v213) ||
     content.includes(redactedThinkingCallsiteReplacement_v214) ||
-    content.includes(thinkingRendererReplacement_v214);
+    content.includes(thinkingRendererReplacement_v214) ||
+    content.includes(redactedThinkingCallsiteReplacement_v216) ||
+    content.includes(thinkingCallsiteReplacement_v216) ||
+    content.includes(thinkingRendererReplacement_v216);
 
   if (!patch2AlreadyApplied) {
     console.log('  ❌ Pattern not found - may need update for newer version');
@@ -725,6 +772,26 @@ if (patch2Applied) {
   if (content.includes(thinkingRendererSearchPattern_v214_variantNullGate)) {
     content = content.replace(thinkingRendererSearchPattern_v214_variantNullGate, thinkingRendererReplacement_v214);
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.4 thinking renderer)');
+  }
+
+  if (content.includes(redactedThinkingCallsiteSearchPattern_v216)) {
+    content = content.replace(redactedThinkingCallsiteSearchPattern_v216, redactedThinkingCallsiteReplacement_v216);
+    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.6 call site)');
+  }
+
+  if (content.includes(thinkingCallsiteSearchPattern_v216)) {
+    content = content.replace(thinkingCallsiteSearchPattern_v216, thinkingCallsiteReplacement_v216);
+    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.6 call site)');
+  }
+
+  if (content.includes(thinkingRendererSearchPattern_v216_variantCollapsedBanner)) {
+    content = content.replace(thinkingRendererSearchPattern_v216_variantCollapsedBanner, thinkingRendererReplacement_v216);
+    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.6 thinking renderer)');
+  }
+
+  if (content.includes(thinkingRendererSearchPattern_v216_variantNullGate)) {
+    content = content.replace(thinkingRendererSearchPattern_v216_variantNullGate, thinkingRendererReplacement_v216);
+    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.6 thinking renderer)');
   }
 }
 
