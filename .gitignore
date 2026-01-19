@@ -1,1 +1,3 @@
 .research/
+.tmp_pkg_*/
+anthropic-ai-claude-code-*.tgz
