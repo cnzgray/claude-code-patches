@@ -26,9 +26,9 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.1.12 (Updated 2026-01-19)
+**Current Version:** Claude Code 2.1.14 (Updated 2026-01-21)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14
 
 ## Quick Start
 
@@ -342,6 +342,20 @@ Then restart Claude Code.
 ## Verification
 
 Check if patches are applied:
+
+### v2.1.14
+
+```bash
+# Should include call sites that never short-circuit:
+grep -nF 'case"redacted_thinking":return q3.createElement(ru2,{addMargin:Q});' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+grep -nF 'case"thinking":{return q3.createElement(zkA,{addMargin:Q,param:A,isTranscriptMode:!0,verbose:Z,hideInTranscript:!1})}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Should include a zkA() that always returns the expanded renderer:
+grep -nF 'function zkA({param:{thinking:A},addMargin:Q=!1,isTranscriptMode:B,verbose:G,hideInTranscript:Z=!1}){if(!A)return null;return L9A.default.createElement(j,{flexDirection:"column"' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+```
 
 ### v2.1.12
 
