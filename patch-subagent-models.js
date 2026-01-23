@@ -10,6 +10,13 @@ const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run');
 const isRestore = args.includes('--restore');
 const showHelp = args.includes('--help') || args.includes('-h');
+const fileArgIndex = args.indexOf('--file');
+const fileArgPath = fileArgIndex >= 0 ? args[fileArgIndex + 1] : null;
+
+if (fileArgIndex >= 0 && !fileArgPath) {
+  console.error('❌ Error: --file requires a path argument');
+  process.exit(1);
+}
 
 // Display help
 if (showHelp) {
@@ -19,6 +26,7 @@ if (showHelp) {
   console.log('Options:');
   console.log('  --dry-run    Preview changes without applying them');
   console.log('  --restore    Restore from backup file');
+   console.log('  --file PATH  Patch a specific cli.js file or native claude binary (skip auto-detection)');
   console.log('  --help, -h   Show this help message\n');
   console.log('Configuration:');
   console.log('  Create ~/.claude/subagent-models.json to configure models:\n');
@@ -46,8 +54,77 @@ function safeExec(command) {
   }
 }
 
-// Auto-detect Claude Code installation path
-function getClaudeCodePath() {
+function readFilePrefix(filePath, maxBytes = 4096) {
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    try {
+      const buf = Buffer.allocUnsafe(maxBytes);
+      const bytesRead = fs.readSync(fd, buf, 0, maxBytes, 0);
+      if (bytesRead <= 0) return null;
+      return buf.subarray(0, bytesRead);
+    } finally {
+      fs.closeSync(fd);
+    }
+  } catch {
+    return null;
+  }
+}
+
+function detectClaudeTargetKind(filePath) {
+  if (filePath.endsWith('.js')) return 'js';
+
+  const prefix = readFilePrefix(filePath);
+  if (!prefix) return 'unknown';
+
+  if (prefix.includes(0)) return 'native-binary';
+  if (
+    prefix.length >= 4 &&
+    prefix[0] === 0x7f &&
+    prefix[1] === 0x45 &&
+    prefix[2] === 0x4c &&
+    prefix[3] === 0x46
+  ) {
+    return 'native-binary';
+  }
+  if (prefix.length >= 2 && prefix[0] === 0x4d && prefix[1] === 0x5a) return 'native-binary';
+  if (prefix.length >= 4) {
+    const m = prefix.readUInt32BE(0);
+    if (m === 0xfeedface || m === 0xfeedfacf || m === 0xcffaedfe || m === 0xcafebabe) return 'native-binary';
+  }
+
+  const asUtf8 = prefix.toString('utf8');
+  if (asUtf8.startsWith('#!')) return 'js';
+
+  return 'unknown';
+}
+
+function getNativeCandidatePaths(homeDir) {
+  const candidates = [];
+  candidates.push(path.join(homeDir, '.local', 'bin', 'claude'));
+
+  const versionsDir = path.join(homeDir, '.local', 'share', 'claude', 'versions');
+  try {
+    if (fs.existsSync(versionsDir)) {
+      const entries = fs.readdirSync(versionsDir);
+      for (const entry of entries) {
+        candidates.push(path.join(versionsDir, entry));
+      }
+    }
+  } catch {
+    // Ignore
+  }
+
+  return candidates;
+}
+
+function padRightSpaces(str, targetLen) {
+  if (str.length > targetLen) return null;
+  if (str.length === targetLen) return str;
+  return str + ' '.repeat(targetLen - str.length);
+}
+
+// Auto-detect Claude Code installation (cli.js or native claude binary)
+function getClaudeCodeTarget() {
   const homeDir = os.homedir();
   const attemptedPaths = [];
 
@@ -62,9 +139,13 @@ function getClaudeCodePath() {
         // Resolve symlinks for global npm installs
         try {
           const realPath = fs.realpathSync(testPath);
-          return realPath;
+          const kind = detectClaudeTargetKind(realPath);
+          if (kind === 'unknown') return null;
+          return { path: realPath, kind, method };
         } catch (e) {
-          return testPath;
+          const kind = detectClaudeTargetKind(testPath);
+          if (kind === 'unknown') return null;
+          return { path: testPath, kind, method };
         }
       }
     } catch (error) {
@@ -81,7 +162,7 @@ function getClaudeCodePath() {
 
   for (const localPath of localPaths) {
     const found = checkPath(localPath, 'local installation');
-    if (found) return found;
+    if (found && found.kind === 'js') return found;
   }
 
   // PRIORITY 2: Global npm installation via 'npm root -g'
@@ -89,14 +170,14 @@ function getClaudeCodePath() {
   if (npmGlobalRoot) {
     const npmGlobalPath = path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'cli.js');
     const found = checkPath(npmGlobalPath, 'npm root -g');
-    if (found) return found;
+    if (found && found.kind === 'js') return found;
   }
 
   // PRIORITY 3: Derive from process.execPath
   const nodeDir = path.dirname(process.execPath);
   const derivedGlobalPath = path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
   const found = checkPath(derivedGlobalPath, 'derived from process.execPath');
-  if (found) return found;
+  if (found && found.kind === 'js') return found;
 
   // PRIORITY 4: Unix systems - try 'which claude' to find binary
   if (process.platform !== 'win32') {
@@ -107,15 +188,24 @@ function getClaudeCodePath() {
         const binDir = path.dirname(realBinary);
         const nodeModulesPath = path.join(binDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
         const foundFromBinary = checkPath(nodeModulesPath, 'which claude');
-        if (foundFromBinary) return foundFromBinary;
+        if (foundFromBinary && foundFromBinary.kind === 'js') return foundFromBinary;
+
+        const nativeFromWhich = checkPath(realBinary, 'which claude (native)');
+        if (nativeFromWhich && nativeFromWhich.kind === 'native-binary') return nativeFromWhich;
       } catch (e) {
         // Failed to resolve, continue
       }
     }
   }
 
+  // PRIORITY 5: Native/binary installation default paths (official installer)
+  for (const candidate of getNativeCandidatePaths(homeDir)) {
+    const native = checkPath(candidate, 'native/binary default paths');
+    if (native && native.kind === 'native-binary') return native;
+  }
+
   // No installation found
-  getClaudeCodePath.attemptedPaths = attemptedPaths;
+  getClaudeCodeTarget.attemptedPaths = attemptedPaths;
   return null;
 }
 
@@ -144,13 +234,43 @@ function getModelConfiguration() {
   return null;
 }
 
-const targetPath = getClaudeCodePath();
+function resolveTarget() {
+  const overridePath = fileArgPath || process.env.CLAUDE_CODE_CLI_PATH;
+  if (overridePath) {
+    const attemptedPaths = [];
+    getClaudeCodeTarget.attemptedPaths = attemptedPaths;
+
+    const resolved = path.resolve(overridePath);
+    attemptedPaths.push({
+      path: resolved,
+      method: fileArgPath ? '--file' : 'CLAUDE_CODE_CLI_PATH',
+    });
+
+    if (!fs.existsSync(resolved)) return null;
+    try {
+      const real = fs.realpathSync(resolved);
+      const kind = detectClaudeTargetKind(real);
+      if (kind === 'unknown') return null;
+      return { path: real, kind, method: fileArgPath ? '--file' : 'CLAUDE_CODE_CLI_PATH' };
+    } catch {
+      const kind = detectClaudeTargetKind(resolved);
+      if (kind === 'unknown') return null;
+      return { path: resolved, kind, method: fileArgPath ? '--file' : 'CLAUDE_CODE_CLI_PATH' };
+    }
+  }
+
+  return getClaudeCodeTarget();
+}
+
+const target = resolveTarget();
+const targetPath = target ? target.path : null;
+const isNativeBinary = target ? target.kind === 'native-binary' : false;
 
 if (!targetPath) {
   console.error('❌ Error: Could not find Claude Code installation\n');
   console.error('Searched using the following methods:\n');
 
-  const attemptedPaths = getClaudeCodePath.attemptedPaths || [];
+  const attemptedPaths = getClaudeCodeTarget.attemptedPaths || [];
 
   if (attemptedPaths.length > 0) {
     const byMethod = {};
@@ -169,10 +289,12 @@ if (!targetPath) {
   console.error('  1. Verify Claude Code is installed: claude --version');
   console.error('  2. For local install: Check ~/.claude/local or ~/.config/claude/local');
   console.error('  3. For global install: Ensure "npm install -g @anthropic-ai/claude-code" succeeded');
+  console.error('  4. For native/binary install: Check ~/.local/bin/claude and ~/.local/share/claude/versions');
   process.exit(1);
 }
 
-console.log(`Found Claude Code at: ${targetPath}\n`);
+console.log(`Found Claude Code at: ${targetPath}`);
+console.log(`Installation type: ${isNativeBinary ? 'native/binary' : 'npm/local (cli.js)'}\n`);
 
 const backupPath = targetPath + '.subagent-models.backup';
 
@@ -214,13 +336,15 @@ console.log(`  general-purpose: ${modelConfig['general-purpose'] || '(not set)'}
 console.log('');
 
 // Read file
-console.log('Reading cli.js...');
+console.log(`Reading ${isNativeBinary ? 'claude binary' : 'cli.js'}...`);
 if (!fs.existsSync(targetPath)) {
-  console.error('❌ Error: cli.js not found at:', targetPath);
+  console.error(`❌ Error: target not found at: ${targetPath}`);
   process.exit(1);
 }
 
-let content = fs.readFileSync(targetPath, 'utf8');
+const fileEncoding = isNativeBinary ? 'latin1' : 'utf8';
+let content = fs.readFileSync(targetPath, fileEncoding);
+const originalContentLength = content.length;
 
 // Define patch patterns for v2.0.33
 const patches = [];
@@ -365,18 +489,59 @@ let patchedContent = content;
 for (const patch of toApply) {
   if (patch.isRegex) {
     const regex = patch.searchPattern;
-    patchedContent = patchedContent.replace(regex, patch.replacePattern);
+    patchedContent = patchedContent.replace(regex, (...args) => {
+      const match = args[0];
+      const replacement = patch.replacePattern(match);
+      if (!isNativeBinary) return replacement;
+      const padded = padRightSpaces(replacement, match.length);
+      if (padded === null) {
+        throw new Error(
+          `Native/binary install patch too large for in-place regex replacement (${patch.name}): ` +
+            `replacement length ${replacement.length} > match length ${match.length}`
+        );
+      }
+      return padded;
+    });
   } else if (patch.partialMatch && patch.findPattern) {
-    patchedContent = patchedContent.replace(patch.findPattern, patch.replacePattern);
+    patchedContent = patchedContent.replace(patch.findPattern, (...args) => {
+      const match = args[0];
+      const replacement = typeof patch.replacePattern === 'function' ? patch.replacePattern(...args) : patch.replacePattern;
+      if (!isNativeBinary) return replacement;
+      const padded = padRightSpaces(replacement, match.length);
+      if (padded === null) {
+        throw new Error(
+          `Native/binary install patch too large for in-place regex replacement (${patch.name}): ` +
+            `replacement length ${replacement.length} > match length ${match.length}`
+        );
+      }
+      return padded;
+    });
   } else {
-    patchedContent = patchedContent.replace(patch.searchPattern, patch.replacement);
+    if (!isNativeBinary) {
+      patchedContent = patchedContent.replace(patch.searchPattern, patch.replacement);
+    } else {
+      const padded = padRightSpaces(patch.replacement, patch.searchPattern.length);
+      if (padded === null) {
+        throw new Error(
+          `Native/binary install patch too large for in-place replacement (${patch.name}): ` +
+            `replacement length ${patch.replacement.length} > search length ${patch.searchPattern.length}`
+        );
+      }
+      patchedContent = patchedContent.replace(patch.searchPattern, padded);
+    }
   }
   console.log(`✅ Applied: ${patch.name}`);
 }
 
 // Write file
 console.log('\nWriting patched file...');
-fs.writeFileSync(targetPath, patchedContent, 'utf8');
+if (isNativeBinary && patchedContent.length !== originalContentLength) {
+  console.error('\n❌ Refusing to write: native/binary install patch would change file size.');
+  console.error(`Original length: ${originalContentLength}, patched length: ${patchedContent.length}`);
+  console.error('This would likely corrupt the native binary. Choose shorter replacements or use an npm/local cli.js install.');
+  process.exit(1);
+}
+fs.writeFileSync(targetPath, patchedContent, fileEncoding);
 console.log('✅ File written successfully\n');
 
 console.log('Summary:');

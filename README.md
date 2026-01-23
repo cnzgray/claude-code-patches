@@ -26,9 +26,9 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.1.15 (Updated 2026-01-22)
+**Current Version:** Claude Code 2.1.17 (Updated 2026-01-23)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17
 
 ## Quick Start
 
@@ -47,7 +47,10 @@ That's it! Thinking blocks now display inline without `ctrl+o`.
 **Works with:**
 - ✅ Local installations (`~/.claude/local`)
 - ✅ Global npm installations (`npm install -g @anthropic-ai/claude-code`)
+- ✅ Native/binary installations (`~/.local/bin/claude`, `~/.local/share/claude/versions/*`)
 - ✅ All Node version managers (NVM, nodenv, asdf, etc.)
+
+**macOS note (native/binary installs):** The native `claude` binary is code-signed. After patching, it must be re-signed (ad-hoc) or macOS may kill it on launch. The patch script handles this automatically; if needed you can run `codesign --force --deep --sign - /path/to/claude` yourself.
 
 ## What This Patch Does
 
@@ -259,8 +262,9 @@ node patch-thinking.js --dry-run
 # Restore original behavior from backup
 node patch-thinking.js --restore
 
-# Patch a specific cli.js file (skip auto-detection)
+# Patch a specific cli.js file or native claude binary (skip auto-detection)
 node patch-thinking.js --file /path/to/cli.js
+node patch-thinking.js --file /path/to/claude
 
 # Show help
 node patch-thinking.js --help
@@ -268,11 +272,12 @@ node patch-thinking.js --help
 
 ## Installation Detection
 
-The script **automatically detects** Claude Code installations using a robust 4-tier detection strategy:
+The script **automatically detects** Claude Code installations using a robust 5-tier detection strategy:
 
 You can also skip auto-detection:
 - `--file /path/to/cli.js`
 - or set `CLAUDE_CODE_CLI_PATH=/path/to/cli.js`
+  (both also accept a native `claude` binary path)
 
 ### Detection Methods (Priority Order)
 
@@ -292,6 +297,11 @@ You can also skip auto-detection:
 4. **Unix Binary Location** (Priority 4)
    - Uses `which claude` on macOS/Linux
    - Traces binary back to installation directory
+
+5. **Native/Binary Installation** (Priority 5)
+   - Detects the official native/binary installer layout
+   - `~/.local/bin/claude`
+   - `~/.local/share/claude/versions/*`
 
 ### Key Features
 
@@ -342,6 +352,23 @@ Then restart Claude Code.
 ## Verification
 
 Check if patches are applied:
+
+### v2.1.17
+
+```bash
+# Should include call sites that never short-circuit:
+grep -nF 'case"redacted_thinking":{let N;if(K[20]!==Y)N=Y9.createElement(aU7,{addMargin:Y}),K[20]=Y,K[21]=N;else N=K[21];return N}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+grep -nF 'case"thinking":{let T=D&&!(!P||f===P),k;if(K[22]!==Y||K[23]!==D||K[24]!==q||K[25]!==T||K[26]!==H)k=Y9.createElement(YW1,{addMargin:Y,param:q,isTranscriptMode:!0,verbose:H,hideInTranscript:!1}),K[22]=Y,K[23]=D,K[24]=q,K[25]=T,K[26]=H,K[27]=k;else k=K[27];return k}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Native/binary installs store the JS bundle inside the executable.
+# Use ripgrep's `-a` flag to search binary data:
+rg -a -nF 'case"redacted_thinking":return t9.createElement(j_1,{addMargin:A});' \
+  ~/.local/share/claude/versions/2.1.17
+rg -a -nF 'case"thinking":{return t9.createElement(FKA,{addMargin:A,param:H,isTranscriptMode:!0,verbose:E,hideInTranscript:!1})}' \
+  ~/.local/share/claude/versions/2.1.17
+```
 
 ### v2.1.15
 
@@ -534,12 +561,16 @@ Searched using the following methods:
     - /opt/homebrew/bin/../lib/node_modules/@anthropic-ai/claude-code/cli.js
   [which claude]
     - /opt/homebrew/bin/../lib/node_modules/@anthropic-ai/claude-code/cli.js
+  [native/binary default paths]
+    - ~/.local/bin/claude
+    - ~/.local/share/claude/versions/*
 
 💡 Troubleshooting:
   1. Verify Claude Code is installed: claude --version
   2. For local install: Check ~/.claude/local or ~/.config/claude/local
   3. For global install: Ensure "npm install -g @anthropic-ai/claude-code" succeeded
   4. Check that npm is in your PATH if using global install
+  5. For native/binary install: Check ~/.local/bin/claude and ~/.local/share/claude/versions
 ```
 
 **Solutions:**
@@ -550,6 +581,7 @@ Searched using the following methods:
    - Verify npm is in your PATH: `npm --version`
    - If using NVM: Ensure you've activated the correct Node version
 4. **Check file permissions:** Ensure the script has read access to the installation directory
+5. **For native/binary installations:** Ensure `~/.local/bin` is on your `PATH`, or run with `--file ~/.local/bin/claude`
 
 ### "Pattern not found"
 
@@ -794,6 +826,10 @@ node patch-subagent-models.js --dry-run
 
 # Restore original behavior
 node patch-subagent-models.js --restore
+
+# Patch a specific cli.js file or native claude binary (skip auto-detection)
+node patch-subagent-models.js --file /path/to/cli.js
+node patch-subagent-models.js --file /path/to/claude
 
 # Show help
 node patch-subagent-models.js --help

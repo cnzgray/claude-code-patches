@@ -21,14 +21,14 @@ if (fileArgIndex >= 0 && !fileArgPath) {
 // Display help
 if (showHelp) {
   console.log(
-    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15)'
+    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17)'
   );
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
   console.log('Options:');
   console.log('  --dry-run    Preview changes without applying them');
   console.log('  --restore    Restore from backup file');
-  console.log('  --file PATH  Patch a specific cli.js file (skip auto-detection)');
+  console.log('  --file PATH  Patch a specific cli.js file or native claude binary (skip auto-detection)');
   console.log('  --help, -h   Show this help message\n');
   console.log('Examples:');
   console.log('  node patch-thinking.js              # Apply patches');
@@ -39,7 +39,7 @@ if (showHelp) {
 }
 
 console.log(
-  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15)'
+  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17)'
 );
 console.log('==============================================\n');
 
@@ -52,8 +52,104 @@ function safeExec(command) {
   }
 }
 
-// Auto-detect Claude Code installation path
-function getClaudeCodePath() {
+function shellQuotePosix(str) {
+  // Minimal safe quoting for POSIX shells (zsh/bash).
+  return `'${String(str).replace(/'/g, `'\"'\"'`)}'`;
+}
+
+function adHocCodesignIfNeeded(filePath) {
+  if (!isNativeBinary) return;
+  if (process.platform !== 'darwin') return;
+
+  // macOS hardened runtime + Developer ID binaries will be killed if modified.
+  // Re-signing ad-hoc allows the patched binary to run again.
+  try {
+    execSync(`codesign --force --deep --sign - ${shellQuotePosix(filePath)}`, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8',
+    });
+    console.log('✅ macOS codesign: re-signed patched native binary (ad-hoc)');
+  } catch (error) {
+    console.error('⚠️  macOS codesign failed. The patched binary may be killed when executed.');
+    console.error('   You can try manually:');
+    console.error(`   codesign --force --deep --sign - ${shellQuotePosix(filePath)}`);
+  }
+}
+
+function readFilePrefix(filePath, maxBytes = 4096) {
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    try {
+      const buf = Buffer.allocUnsafe(maxBytes);
+      const bytesRead = fs.readSync(fd, buf, 0, maxBytes, 0);
+      if (bytesRead <= 0) return null;
+      return buf.subarray(0, bytesRead);
+    } finally {
+      fs.closeSync(fd);
+    }
+  } catch {
+    return null;
+  }
+}
+
+function detectClaudeTargetKind(filePath) {
+  if (filePath.endsWith('.js')) return 'js';
+
+  const prefix = readFilePrefix(filePath);
+  if (!prefix) return 'unknown';
+
+  // Heuristic: NUL bytes in prefix usually means a binary (Mach-O/ELF/PE, etc.)
+  if (prefix.includes(0)) return 'native-binary';
+
+  // Detect common native binary headers.
+  // - ELF: 0x7F 'E' 'L' 'F'
+  if (
+    prefix.length >= 4 &&
+    prefix[0] === 0x7f &&
+    prefix[1] === 0x45 &&
+    prefix[2] === 0x4c &&
+    prefix[3] === 0x46
+  ) {
+    return 'native-binary';
+  }
+  // - PE/COFF: 'MZ'
+  if (prefix.length >= 2 && prefix[0] === 0x4d && prefix[1] === 0x5a) return 'native-binary';
+  // - Mach-O: FE ED FA CE / FE ED FA CF / CF FA ED FE / CA FE BA BE (fat)
+  if (prefix.length >= 4) {
+    const m = prefix.readUInt32BE(0);
+    if (m === 0xfeedface || m === 0xfeedfacf || m === 0xcffaedfe || m === 0xcafebabe) return 'native-binary';
+  }
+
+  // If it starts with a shebang, treat as script (npm-installed cli.js wrappers sometimes omit .js).
+  const asUtf8 = prefix.toString('utf8');
+  if (asUtf8.startsWith('#!')) return 'js';
+
+  return 'unknown';
+}
+
+function getNativeCandidatePaths(homeDir) {
+  const candidates = [];
+
+  candidates.push(path.join(homeDir, '.local', 'bin', 'claude'));
+
+  // Official native installer stores versioned binaries here (filenames are versions like 2.0.65).
+  const versionsDir = path.join(homeDir, '.local', 'share', 'claude', 'versions');
+  try {
+    if (fs.existsSync(versionsDir)) {
+      const entries = fs.readdirSync(versionsDir);
+      for (const entry of entries) {
+        candidates.push(path.join(versionsDir, entry));
+      }
+    }
+  } catch {
+    // Ignore
+  }
+
+  return candidates;
+}
+
+// Auto-detect Claude Code installation (cli.js or native claude binary)
+function getClaudeCodeTarget() {
   const homeDir = os.homedir();
   const attemptedPaths = [];
 
@@ -68,9 +164,13 @@ function getClaudeCodePath() {
         // Resolve symlinks for global npm installs
         try {
           const realPath = fs.realpathSync(testPath);
-          return realPath;
+          const kind = detectClaudeTargetKind(realPath);
+          if (kind === 'unknown') return null;
+          return { path: realPath, kind, method };
         } catch (e) {
-          return testPath;
+          const kind = detectClaudeTargetKind(testPath);
+          if (kind === 'unknown') return null;
+          return { path: testPath, kind, method };
         }
       }
     } catch (error) {
@@ -87,7 +187,7 @@ function getClaudeCodePath() {
 
   for (const localPath of localPaths) {
     const found = checkPath(localPath, 'local installation');
-    if (found) return found;
+    if (found && found.kind === 'js') return found;
   }
 
   // PRIORITY 2: Global npm installation via 'npm root -g'
@@ -95,7 +195,7 @@ function getClaudeCodePath() {
   if (npmGlobalRoot) {
     const npmGlobalPath = path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'cli.js');
     const found = checkPath(npmGlobalPath, 'npm root -g');
-    if (found) return found;
+    if (found && found.kind === 'js') return found;
   }
 
   // PRIORITY 3: Derive from process.execPath
@@ -103,7 +203,7 @@ function getClaudeCodePath() {
   const nodeDir = path.dirname(process.execPath);
   const derivedGlobalPath = path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
   const found = checkPath(derivedGlobalPath, 'derived from process.execPath');
-  if (found) return found;
+  if (found && found.kind === 'js') return found;
 
   // PRIORITY 4: Unix systems - try 'which claude' to find binary
   if (process.platform !== 'win32') {
@@ -117,30 +217,40 @@ function getClaudeCodePath() {
         // In that case, treat it as the target file instead of deriving a lib/ path.
         if (realBinary.endsWith(path.join('@anthropic-ai', 'claude-code', 'cli.js'))) {
           const foundDirect = checkPath(realBinary, 'which claude (direct cli.js)');
-          if (foundDirect) return foundDirect;
+          if (foundDirect && foundDirect.kind === 'js') return foundDirect;
         }
 
         // Otherwise, navigate from bin/claude to lib/node_modules/@anthropic-ai/claude-code/cli.js
         const binDir = path.dirname(realBinary);
         const nodeModulesPath = path.join(binDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
         const foundFromBinary = checkPath(nodeModulesPath, 'which claude');
-        if (foundFromBinary) return foundFromBinary;
+        if (foundFromBinary && foundFromBinary.kind === 'js') return foundFromBinary;
+
+        // If we didn't find a JS install, the `claude` on PATH may itself be a native/binary install.
+        const nativeFromWhich = checkPath(realBinary, 'which claude (native)');
+        if (nativeFromWhich && nativeFromWhich.kind === 'native-binary') return nativeFromWhich;
       } catch (e) {
         // Failed to resolve, continue
       }
     }
   }
 
+  // PRIORITY 5: Native/binary installation default paths (official installer)
+  for (const candidate of getNativeCandidatePaths(homeDir)) {
+    const native = checkPath(candidate, 'native/binary default paths');
+    if (native && native.kind === 'native-binary') return native;
+  }
+
   // No installation found, return null and include attempted paths for error reporting
-  getClaudeCodePath.attemptedPaths = attemptedPaths;
+  getClaudeCodeTarget.attemptedPaths = attemptedPaths;
   return null;
 }
 
-function resolveTargetPath() {
+function resolveTarget() {
   const overridePath = fileArgPath || process.env.CLAUDE_CODE_CLI_PATH;
   if (overridePath) {
     const attemptedPaths = [];
-    getClaudeCodePath.attemptedPaths = attemptedPaths;
+    getClaudeCodeTarget.attemptedPaths = attemptedPaths;
 
     const resolved = path.resolve(overridePath);
     attemptedPaths.push({
@@ -150,22 +260,237 @@ function resolveTargetPath() {
 
     if (!fs.existsSync(resolved)) return null;
     try {
-      return fs.realpathSync(resolved);
+      const real = fs.realpathSync(resolved);
+      const kind = detectClaudeTargetKind(real);
+      if (kind === 'unknown') return null;
+      return { path: real, kind, method: fileArgPath ? '--file' : 'CLAUDE_CODE_CLI_PATH' };
     } catch {
-      return resolved;
+      const kind = detectClaudeTargetKind(resolved);
+      if (kind === 'unknown') return null;
+      return { path: resolved, kind, method: fileArgPath ? '--file' : 'CLAUDE_CODE_CLI_PATH' };
     }
   }
 
-  return getClaudeCodePath();
+  return getClaudeCodeTarget();
 }
 
-const targetPath = resolveTargetPath();
+const target = resolveTarget();
+const targetPath = target ? target.path : null;
+const isNativeBinary = target ? target.kind === 'native-binary' : false;
+
+function padRightSpaces(str, targetLen) {
+  if (str.length > targetLen) return null;
+  if (str.length === targetLen) return str;
+  return str + ' '.repeat(targetLen - str.length);
+}
+
+function replaceOnceExact(source, search, replacement, label) {
+  if (!isNativeBinary) return source.replace(search, replacement);
+
+  const srcBuf = Buffer.isBuffer(source) ? source : Buffer.from(source, 'utf8');
+  const searchBuf = Buffer.from(search, 'utf8');
+  const replacementBuf = Buffer.from(replacement, 'utf8');
+
+  if (replacementBuf.length > searchBuf.length) {
+    throw new Error(
+      `Native/binary install patch too large for in-place replacement (${label}): ` +
+        `replacement bytes ${replacementBuf.length} > search bytes ${searchBuf.length}`
+    );
+  }
+
+  const idx = srcBuf.indexOf(searchBuf);
+  if (idx < 0) return srcBuf;
+
+  const out = Buffer.from(srcBuf);
+  replacementBuf.copy(out, idx);
+  if (replacementBuf.length < searchBuf.length) {
+    out.fill(0x20, idx + replacementBuf.length, idx + searchBuf.length);
+  }
+  return out;
+}
+
+function replaceRegexPreserveLength(source, regex, replacer, label) {
+  if (!isNativeBinary) return source.replace(regex, replacer);
+  if (Buffer.isBuffer(source)) {
+    throw new Error(`Regex patches are not supported for native/binary installs (${label})`);
+  }
+  return source.replace(regex, (...args) => {
+    const match = args[0];
+    const replacement = typeof replacer === 'function' ? replacer(...args) : replacer;
+    if (typeof replacement !== 'string') {
+      throw new Error(`Unexpected non-string regex replacement for ${label}`);
+    }
+    const padded = padRightSpaces(replacement, match.length);
+    if (padded === null) {
+      throw new Error(
+        `Native/binary install patch too large for in-place regex replacement (${label}): ` +
+          `replacement length ${replacement.length} > match length ${match.length}`
+      );
+    }
+    return padded;
+  });
+}
+
+function replaceRegexPreserveLengthNativeString(source, regex, replacer, label) {
+  if (typeof source !== 'string') {
+    throw new Error(`Expected string for native regex replacement (${label})`);
+  }
+
+  let replacedCount = 0;
+  const out = source.replace(regex, (...args) => {
+    replacedCount += 1;
+    const match = args[0];
+    const replacement = typeof replacer === 'function' ? replacer(...args) : replacer;
+    if (typeof replacement !== 'string') {
+      throw new Error(`Unexpected non-string regex replacement for ${label}`);
+    }
+    const padded = padRightSpaces(replacement, match.length);
+    if (padded === null) {
+      throw new Error(
+        `Native/binary install patch too large for in-place regex replacement (${label}): ` +
+          `replacement length ${replacement.length} > match length ${match.length}`
+      );
+    }
+    return padded;
+  });
+
+  return { out, replacedCount };
+}
+
+// Lightweight native/binary regex fallback (no extraction/repack):
+// - Decode the binary as latin1 (1 byte per code unit)
+// - Do length-preserving replacements in-place (pad with spaces)
+// - Re-encode to latin1 bytes (same file size)
+//
+// This is less robust than true repacking, but avoids extra dependencies (e.g. node-lief).
+const nativeRedactedThinkingCallsiteRegex_noBraces =
+  /(case"redacted_thinking":)if\(![$\w]+&&![$\w]+\)return null;(return [$\w]+\.createElement\([$\w]+,\{addMargin:[$\w]+\}\);)/g;
+const nativeRedactedThinkingCallsiteRegex_withBraces =
+  /(case"redacted_thinking":)\{if\(![$\w]+&&![$\w]+\)return null;(return [$\w]+\.createElement\([$\w]+,\{addMargin:[$\w]+\}\);)\}/g;
+
+// New-format thinking call site (2.0.77+ style), works for both npm and native bundles.
+// We also preserve any props after hideInTranscript by capturing the tail.
+const nativeThinkingCallsiteRegex_newFormat =
+  /(case"thinking":)\{if\(![$\w]+&&![$\w]+\)return null;return ([$\w]+\.createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([$\w]+)(,verbose:)([$\w]+)(,hideInTranscript:)([^,}]+)([^}]*)(\}\)\;?\})/g;
+
+const nativeThinkingCallsiteRegex_oldFormat =
+  /(case"thinking":)if\(![$\w]+&&![$\w]+\)return null;(return [$\w]+\.createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([$\w]+)(,verbose:)([$\w]+)(\}\);?)/g;
+
+function detectNativeRegexPatches(sourceBuf) {
+  const text = Buffer.isBuffer(sourceBuf) ? sourceBuf.toString('latin1') : String(sourceBuf);
+  const steps = [];
+
+  // Avoid .test() with /g regex (lastIndex side effects); use a fresh regex each time.
+  if (/case"redacted_thinking":/.test(text)) {
+    if (
+      new RegExp(nativeRedactedThinkingCallsiteRegex_noBraces.source).test(text) ||
+      new RegExp(nativeRedactedThinkingCallsiteRegex_withBraces.source).test(text)
+    ) {
+      steps.push('native redacted_thinking call site (regex)');
+    }
+  }
+
+  if (/case"thinking":/.test(text)) {
+    if (
+      new RegExp(nativeThinkingCallsiteRegex_newFormat.source).test(text) ||
+      new RegExp(nativeThinkingCallsiteRegex_oldFormat.source).test(text)
+    ) {
+      steps.push('native thinking call site (regex)');
+    }
+  }
+
+  return steps;
+}
+
+function applyNativeRegexPatches(sourceBuf) {
+  if (!Buffer.isBuffer(sourceBuf)) {
+    throw new Error('applyNativeRegexPatches expected a Buffer');
+  }
+
+  let text = sourceBuf.toString('latin1');
+  const steps = [];
+
+  {
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      nativeRedactedThinkingCallsiteRegex_noBraces,
+      (_m, casePrefix, returnExpr) => `${casePrefix}${returnExpr}`,
+      'native redacted_thinking call site (regex, no braces)'
+    );
+    if (replacedCount > 0) {
+      text = out;
+      steps.push(`native redacted_thinking call site (regex) x${replacedCount}`);
+    }
+  }
+
+  {
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      nativeRedactedThinkingCallsiteRegex_withBraces,
+      (_m, casePrefix, returnExpr) => `${casePrefix}{${returnExpr}}`,
+      'native redacted_thinking call site (regex, braces)'
+    );
+    if (replacedCount > 0) {
+      text = out;
+      steps.push(`native redacted_thinking call site (regex, braces) x${replacedCount}`);
+    }
+  }
+
+  {
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      nativeThinkingCallsiteRegex_newFormat,
+      (
+        _m,
+        casePrefix,
+        createPrefix,
+        _oldIsTranscriptMode,
+        verboseKey,
+        verboseVar,
+        hideKey,
+        _oldHideValue,
+        tail,
+        suffix
+      ) => {
+        return `${casePrefix}{return ${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${tail}${suffix}`;
+      },
+      'native thinking call site (regex, new format)'
+    );
+    if (replacedCount > 0) {
+      text = out;
+      steps.push(`native thinking call site (regex, new format) x${replacedCount}`);
+    }
+  }
+
+  {
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      nativeThinkingCallsiteRegex_oldFormat,
+      (_m, casePrefix, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, suffix) => {
+        return `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${suffix}`;
+      },
+      'native thinking call site (regex, old format)'
+    );
+    if (replacedCount > 0) {
+      text = out;
+      steps.push(`native thinking call site (regex, old format) x${replacedCount}`);
+    }
+  }
+
+  const outBuf = Buffer.from(text, 'latin1');
+  if (outBuf.length !== sourceBuf.length) {
+    throw new Error(
+      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
+    );
+  }
+  return { out: outBuf, steps };
+}
 
 if (!targetPath) {
   console.error('❌ Error: Could not find Claude Code installation\n');
   console.error('Searched using the following methods:\n');
 
-  const attemptedPaths = getClaudeCodePath.attemptedPaths || [];
+  const attemptedPaths = getClaudeCodeTarget.attemptedPaths || [];
 
   if (attemptedPaths.length > 0) {
     // Group by method for cleaner output
@@ -183,6 +508,7 @@ if (!targetPath) {
     console.error('  - ~/.claude/local/node_modules/@anthropic-ai/claude-code/cli.js');
     console.error('  - ~/.config/claude/local/node_modules/@anthropic-ai/claude-code/cli.js');
     console.error('  - Global npm installation (npm root -g)');
+    console.error('  - Native/binary installation (~/.local/bin/claude, ~/.local/share/claude/versions/*)');
   }
 
   console.error('\n💡 Troubleshooting:');
@@ -190,10 +516,12 @@ if (!targetPath) {
   console.error('  2. For local install: Check ~/.claude/local or ~/.config/claude/local');
   console.error('  3. For global install: Ensure "npm install -g @anthropic-ai/claude-code" succeeded');
   console.error('  4. Check that npm is in your PATH if using global install');
+  console.error('  5. For native/binary install: Check ~/.local/bin/claude and ~/.local/share/claude/versions');
   process.exit(1);
 }
 
-console.log(`Found Claude Code at: ${targetPath}\n`);
+console.log(`Found Claude Code at: ${targetPath}`);
+console.log(`Installation type: ${isNativeBinary ? 'native/binary' : 'npm/local (cli.js)'}\n`);
 
 const backupPath = targetPath + '.backup';
 
@@ -212,13 +540,15 @@ if (isRestore) {
 }
 
 // Read file
-console.log('Reading cli.js...');
+console.log(`Reading ${isNativeBinary ? 'claude binary' : 'cli.js'}...`);
 if (!fs.existsSync(targetPath)) {
-  console.error('❌ Error: cli.js not found at:', targetPath);
+  console.error(`❌ Error: target not found at: ${targetPath}`);
   process.exit(1);
 }
 
-let content = fs.readFileSync(targetPath, 'utf8');
+const fileEncoding = 'utf8';
+let content = isNativeBinary ? fs.readFileSync(targetPath) : fs.readFileSync(targetPath, fileEncoding);
+const originalContentLength = content.length;
 
 // Patch patterns by Claude Code version.
 // We keep exact-string matching because cli.js is heavily minified and patterns are version-specific.
@@ -514,16 +844,23 @@ function applyRegexPatches_v21114(source) {
   const steps = [];
 
   if (redactedThinkingCallsiteRegex_v21114.test(out)) {
-    out = out.replace(redactedThinkingCallsiteRegex_v21114, '$1$2');
+    out = replaceRegexPreserveLength(
+      out,
+      redactedThinkingCallsiteRegex_v21114,
+      (_m, casePrefix, returnExpr) => `${casePrefix}${returnExpr}`,
+      'v2.1.14 redacted_thinking call site (regex)'
+    );
     steps.push('v2.1.14 redacted_thinking call site (regex)');
   }
 
   if (thinkingCallsiteRegex_v21114.test(out)) {
-    out = out.replace(
+    out = replaceRegexPreserveLength(
+      out,
       thinkingCallsiteRegex_v21114,
       (_m, casePrefix, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey) => {
         return `${casePrefix}{return ${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1})}`;
-      }
+      },
+      'v2.1.14 thinking call site (regex)'
     );
     steps.push('v2.1.14 thinking call site (regex)');
   }
@@ -564,23 +901,127 @@ function applyRegexPatches_v21115(source) {
   const steps = [];
 
   if (redactedThinkingCallsiteGateRegex_v21115.test(out)) {
-    out = out.replace(redactedThinkingCallsiteGateRegex_v21115, '$1{');
+    out = replaceRegexPreserveLength(
+      out,
+      redactedThinkingCallsiteGateRegex_v21115,
+      (_m, casePrefix) => `${casePrefix}{`,
+      'v2.1.15 redacted_thinking call site gate (regex)'
+    );
     steps.push('v2.1.15 redacted_thinking call site gate (regex)');
   }
 
   if (thinkingCallsiteGateRegex_v21115.test(out)) {
-    out = out.replace(thinkingCallsiteGateRegex_v21115, '$1{');
+    out = replaceRegexPreserveLength(
+      out,
+      thinkingCallsiteGateRegex_v21115,
+      (_m, casePrefix) => `${casePrefix}{`,
+      'v2.1.15 thinking call site gate (regex)'
+    );
     steps.push('v2.1.15 thinking call site gate (regex)');
   }
 
   if (thinkingCallsiteArgsRegex_v21115.test(out)) {
-    out = out.replace(
+    out = replaceRegexPreserveLength(
+      out,
       thinkingCallsiteArgsRegex_v21115,
       (_m, casePrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideVar, suffix) => {
         return `${casePrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`;
-      }
+      },
+      'v2.1.15 thinking call site args (regex)'
     );
     steps.push('v2.1.15 thinking call site args (regex)');
+  }
+
+  return { out, steps };
+}
+
+// Patch 2p: Force thinking visibility (v2.1.17).
+// In 2.1.17, identifiers changed again:
+// - createElement namespace: `Y9`
+// - redacted_thinking renderer: `aU7`
+// - thinking renderer: `YW1`
+//
+// The underlying control structure remains:
+// - call-site short-circuit: if(!isTranscriptMode && !verbose) return null
+// - renderer has hideInTranscript + collapsed banner branch
+//
+// Like v2.1.15, patching only the call sites is sufficient:
+// - remove the short-circuit gate (so thinking isn't dropped)
+// - force isTranscriptMode=true (so renderer takes expanded branch)
+// - force hideInTranscript=false (so transcript-mode hiding can't suppress it)
+const redactedThinkingCallsiteSearchPattern_v21117 =
+  'case"redacted_thinking":{if(!D&&!H)return null;let N;if(K[20]!==Y)N=Y9.createElement(aU7,{addMargin:Y}),K[20]=Y,K[21]=N;else N=K[21];return N}';
+const redactedThinkingCallsiteReplacement_v21117 =
+  'case"redacted_thinking":{let N;if(K[20]!==Y)N=Y9.createElement(aU7,{addMargin:Y}),K[20]=Y,K[21]=N;else N=K[21];return N}';
+const thinkingCallsiteSearchPattern_v21117 =
+  'case"thinking":{if(!D&&!H)return null;let T=D&&!(!P||f===P),k;if(K[22]!==Y||K[23]!==D||K[24]!==q||K[25]!==T||K[26]!==H)k=Y9.createElement(YW1,{addMargin:Y,param:q,isTranscriptMode:D,verbose:H,hideInTranscript:T}),K[22]=Y,K[23]=D,K[24]=q,K[25]=T,K[26]=H,K[27]=k;else k=K[27];return k}';
+const thinkingCallsiteReplacement_v21117 =
+  'case"thinking":{let T=D&&!(!P||f===P),k;if(K[22]!==Y||K[23]!==D||K[24]!==q||K[25]!==T||K[26]!==H)k=Y9.createElement(YW1,{addMargin:Y,param:q,isTranscriptMode:!0,verbose:H,hideInTranscript:!1}),K[22]=Y,K[23]=D,K[24]=q,K[25]=T,K[26]=H,K[27]=k;else k=K[27];return k}';
+
+// Native/binary variant for v2.1.17.
+// The native build for 2.1.17 uses a simpler switch-case shape (no memo-cache),
+// and different identifiers:
+// - createElement namespace: `t9`
+// - redacted_thinking renderer: `j_1`
+// - thinking renderer: `FKA`
+// - transcript/verbose vars: `X` / `E`
+// - hideInTranscript expression: `X&&!(!K||J===K)`
+//
+// We patch only the call sites, same rationale as npm builds:
+// - remove the short-circuit gate
+// - force isTranscriptMode=true
+// - force hideInTranscript=false
+const redactedThinkingCallsiteSearchPattern_v21117_native =
+  'case"redacted_thinking":if(!X&&!E)return null;return t9.createElement(j_1,{addMargin:A});';
+const redactedThinkingCallsiteReplacement_v21117_native =
+  'case"redacted_thinking":return t9.createElement(j_1,{addMargin:A});';
+const thinkingCallsiteSearchPattern_v21117_native =
+  'case"thinking":{if(!X&&!E)return null;return t9.createElement(FKA,{addMargin:A,param:H,isTranscriptMode:X,verbose:E,hideInTranscript:X&&!(!K||J===K)})}';
+const thinkingCallsiteReplacement_v21117_native =
+  'case"thinking":{return t9.createElement(FKA,{addMargin:A,param:H,isTranscriptMode:!0,verbose:E,hideInTranscript:!1})}';
+
+// Regex-based fallback for v2.1.17 (inspired by tweakcc's thinkingVisibility.ts).
+// Keep this scoped to VERSION:"2.1.17" to avoid accidental matches across versions.
+const redactedThinkingCallsiteGateRegex_v21117 =
+  /(case"redacted_thinking":)\{if\(![$\w]+&&![$\w]+\)return null;/;
+const thinkingCallsiteGateRegex_v21117 = /(case"thinking":)\{if\(![$\w]+&&![$\w]+\)return null;/;
+const thinkingCallsiteArgsRegex_v21117 =
+  /(case"thinking":[\s\S]{0,800}?createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([$\w]+)(,verbose:)([$\w]+)(,hideInTranscript:)([$\w]+)(\}\))/;
+
+function applyRegexPatches_v21117(source) {
+  let out = source;
+  const steps = [];
+
+  if (redactedThinkingCallsiteGateRegex_v21117.test(out)) {
+    out = replaceRegexPreserveLength(
+      out,
+      redactedThinkingCallsiteGateRegex_v21117,
+      (_m, casePrefix) => `${casePrefix}{`,
+      'v2.1.17 redacted_thinking call site gate (regex)'
+    );
+    steps.push('v2.1.17 redacted_thinking call site gate (regex)');
+  }
+
+  if (thinkingCallsiteGateRegex_v21117.test(out)) {
+    out = replaceRegexPreserveLength(
+      out,
+      thinkingCallsiteGateRegex_v21117,
+      (_m, casePrefix) => `${casePrefix}{`,
+      'v2.1.17 thinking call site gate (regex)'
+    );
+    steps.push('v2.1.17 thinking call site gate (regex)');
+  }
+
+  if (thinkingCallsiteArgsRegex_v21117.test(out)) {
+    out = replaceRegexPreserveLength(
+      out,
+      thinkingCallsiteArgsRegex_v21117,
+      (_m, casePrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideVar, suffix) => {
+        return `${casePrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`;
+      },
+      'v2.1.17 thinking call site args (regex)'
+    );
+    steps.push('v2.1.17 thinking call site args (regex)');
   }
 
   return { out, steps };
@@ -883,7 +1324,7 @@ if (content.includes(redactedThinkingCallsiteSearchPattern_v21114)) {
   patch2PlannedSteps.push('v2.1.14 redacted_thinking call site');
 } else if (content.includes(redactedThinkingCallsiteReplacement_v21114)) {
   console.log('  ⚠️  Already applied (v2.1.14 redacted_thinking call site)');
-} else if (content.includes('VERSION:"2.1.14"')) {
+} else if (!isNativeBinary && content.includes('VERSION:"2.1.14"')) {
   const { steps } = applyRegexPatches_v21114(content);
   if (steps.includes('v2.1.14 redacted_thinking call site (regex)')) {
     patch2Applied = true;
@@ -896,7 +1337,7 @@ if (content.includes(thinkingCallsiteSearchPattern_v21114)) {
   patch2PlannedSteps.push('v2.1.14 thinking call site');
 } else if (content.includes(thinkingCallsiteReplacement_v21114)) {
   console.log('  ⚠️  Already applied (v2.1.14 thinking call site)');
-} else if (content.includes('VERSION:"2.1.14"')) {
+} else if (!isNativeBinary && content.includes('VERSION:"2.1.14"')) {
   const { steps } = applyRegexPatches_v21114(content);
   if (steps.includes('v2.1.14 thinking call site (regex)')) {
     patch2Applied = true;
@@ -919,7 +1360,7 @@ if (content.includes(redactedThinkingCallsiteSearchPattern_v21115)) {
   patch2PlannedSteps.push('v2.1.15 redacted_thinking call site');
 } else if (content.includes(redactedThinkingCallsiteReplacement_v21115)) {
   console.log('  ⚠️  Already applied (v2.1.15 redacted_thinking call site)');
-} else if (content.includes('VERSION:"2.1.15"')) {
+} else if (!isNativeBinary && content.includes('VERSION:"2.1.15"')) {
   const { steps } = applyRegexPatches_v21115(content);
   if (steps.includes('v2.1.15 redacted_thinking call site gate (regex)')) {
     patch2Applied = true;
@@ -932,7 +1373,7 @@ if (content.includes(thinkingCallsiteSearchPattern_v21115)) {
   patch2PlannedSteps.push('v2.1.15 thinking call site');
 } else if (content.includes(thinkingCallsiteReplacement_v21115)) {
   console.log('  ⚠️  Already applied (v2.1.15 thinking call site)');
-} else if (content.includes('VERSION:"2.1.15"')) {
+} else if (!isNativeBinary && content.includes('VERSION:"2.1.15"')) {
   const { steps } = applyRegexPatches_v21115(content);
   if (
     steps.includes('v2.1.15 thinking call site gate (regex)') ||
@@ -940,6 +1381,60 @@ if (content.includes(thinkingCallsiteSearchPattern_v21115)) {
   ) {
     patch2Applied = true;
     patch2PlannedSteps.push('v2.1.15 thinking call site (regex)');
+  }
+}
+
+if (content.includes(redactedThinkingCallsiteSearchPattern_v21117)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.1.17 redacted_thinking call site');
+} else if (content.includes(redactedThinkingCallsiteReplacement_v21117)) {
+  console.log('  ⚠️  Already applied (v2.1.17 redacted_thinking call site)');
+} else if (!isNativeBinary && content.includes('VERSION:"2.1.17"')) {
+  const { steps } = applyRegexPatches_v21117(content);
+  if (steps.includes('v2.1.17 redacted_thinking call site gate (regex)')) {
+    patch2Applied = true;
+    patch2PlannedSteps.push('v2.1.17 redacted_thinking call site (regex)');
+  }
+}
+
+if (content.includes(thinkingCallsiteSearchPattern_v21117)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.1.17 thinking call site');
+} else if (content.includes(thinkingCallsiteReplacement_v21117)) {
+  console.log('  ⚠️  Already applied (v2.1.17 thinking call site)');
+} else if (!isNativeBinary && content.includes('VERSION:"2.1.17"')) {
+  const { steps } = applyRegexPatches_v21117(content);
+  if (
+    steps.includes('v2.1.17 thinking call site gate (regex)') ||
+    steps.includes('v2.1.17 thinking call site args (regex)')
+  ) {
+    patch2Applied = true;
+    patch2PlannedSteps.push('v2.1.17 thinking call site (regex)');
+  }
+}
+
+// Native/binary detection for v2.1.17 (exact-string only; regex not supported for native).
+if (isNativeBinary && content.includes(redactedThinkingCallsiteSearchPattern_v21117_native)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.1.17 redacted_thinking call site (native)');
+} else if (isNativeBinary && content.includes(redactedThinkingCallsiteReplacement_v21117_native)) {
+  console.log('  ⚠️  Already applied (v2.1.17 redacted_thinking call site (native))');
+}
+
+if (isNativeBinary && content.includes(thinkingCallsiteSearchPattern_v21117_native)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.1.17 thinking call site (native)');
+} else if (isNativeBinary && content.includes(thinkingCallsiteReplacement_v21117_native)) {
+  console.log('  ⚠️  Already applied (v2.1.17 thinking call site (native))');
+}
+
+// Lightweight native/binary regex fallback (for versions whose identifiers differ).
+// Only used when no exact-string patterns matched.
+if (isNativeBinary && patch2PlannedSteps.length === 0) {
+  const nativeSteps = detectNativeRegexPatches(content);
+  if (nativeSteps.length > 0) {
+    patch2Applied = true;
+    patch2PlannedSteps.push(...nativeSteps);
   }
 }
 
@@ -985,7 +1480,11 @@ if (patch2PlannedSteps.length > 0) {
     content.includes(thinkingCallsiteReplacement_v21114) ||
     content.includes(thinkingRendererReplacement_v21114) ||
     content.includes(redactedThinkingCallsiteReplacement_v21115) ||
-    content.includes(thinkingCallsiteReplacement_v21115);
+    content.includes(thinkingCallsiteReplacement_v21115) ||
+    content.includes(redactedThinkingCallsiteReplacement_v21117) ||
+    content.includes(thinkingCallsiteReplacement_v21117) ||
+    content.includes(redactedThinkingCallsiteReplacement_v21117_native) ||
+    content.includes(thinkingCallsiteReplacement_v21117_native);
 
   if (!patch2AlreadyApplied) {
     console.log('  ❌ Pattern not found - may need update for newer version');
@@ -1024,261 +1523,490 @@ console.log('\nApplying patches...');
 
 // Apply Patch 1
 if (patch1Applied) {
-  content = content.replace(bannerSearchPattern_v2062, bannerReplacement_v2062);
+  content = replaceOnceExact(content, bannerSearchPattern_v2062, bannerReplacement_v2062, 'Patch 1 v2.0.62 banner');
   console.log('✅ Patch 1 applied: ZT2 function now returns null');
 }
 
 // Apply Patch 2
 if (patch2Applied) {
   if (content.includes(thinkingSearchPattern_v2062)) {
-    content = content.replace(thinkingSearchPattern_v2062, thinkingReplacement_v2062);
+    content = replaceOnceExact(content, thinkingSearchPattern_v2062, thinkingReplacement_v2062, 'v2.0.62 thinking call site');
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.62 call site)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v2074)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v2074, redactedThinkingCallsiteReplacement_v2074);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v2074,
+      redactedThinkingCallsiteReplacement_v2074,
+      'v2.0.74 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.0.74 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v2074)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v2074, thinkingCallsiteReplacement_v2074);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v2074,
+      thinkingCallsiteReplacement_v2074,
+      'v2.0.74 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.0.74 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v2074_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v2074_variantCollapsedBanner, thinkingRendererReplacement_v2074);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v2074_variantCollapsedBanner,
+      thinkingRendererReplacement_v2074,
+      'v2.0.74 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.74 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v2074_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v2074_variantNullGate, thinkingRendererReplacement_v2074);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v2074_variantNullGate,
+      thinkingRendererReplacement_v2074,
+      'v2.0.74 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.74 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v2076)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v2076, redactedThinkingCallsiteReplacement_v2076);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v2076,
+      redactedThinkingCallsiteReplacement_v2076,
+      'v2.0.76 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.0.76 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v2076)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v2076, thinkingCallsiteReplacement_v2076);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v2076,
+      thinkingCallsiteReplacement_v2076,
+      'v2.0.76 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.0.76 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v2076_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v2076_variantCollapsedBanner, thinkingRendererReplacement_v2076);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v2076_variantCollapsedBanner,
+      thinkingRendererReplacement_v2076,
+      'v2.0.76 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.76 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v2076_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v2076_variantNullGate, thinkingRendererReplacement_v2076);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v2076_variantNullGate,
+      thinkingRendererReplacement_v2076,
+      'v2.0.76 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.76 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v2071_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v2071_variantCollapsedBanner, thinkingRendererReplacement_v2071);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v2071_variantCollapsedBanner,
+      thinkingRendererReplacement_v2071,
+      'v2.0.71 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.71 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v2071_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v2071_variantNullGate, thinkingRendererReplacement_v2071);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v2071_variantNullGate,
+      thinkingRendererReplacement_v2071,
+      'v2.0.71 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.71 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v2111)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v2111, redactedThinkingCallsiteReplacement_v2111);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v2111,
+      redactedThinkingCallsiteReplacement_v2111,
+      'v2.1.1 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.1 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v2111)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v2111, thinkingCallsiteReplacement_v2111);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v2111,
+      thinkingCallsiteReplacement_v2111,
+      'v2.1.1 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.1 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v2111_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v2111_variantCollapsedBanner, thinkingRendererReplacement_v2111);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v2111_variantCollapsedBanner,
+      thinkingRendererReplacement_v2111,
+      'v2.1.1 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.1 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v2111_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v2111_variantNullGate, thinkingRendererReplacement_v2111);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v2111_variantNullGate,
+      thinkingRendererReplacement_v2111,
+      'v2.1.1 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.1 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v212)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v212, redactedThinkingCallsiteReplacement_v212);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v212,
+      redactedThinkingCallsiteReplacement_v212,
+      'v2.1.2 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.2 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v212)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v212, thinkingCallsiteReplacement_v212);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v212,
+      thinkingCallsiteReplacement_v212,
+      'v2.1.2 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.2 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v212_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v212_variantCollapsedBanner, thinkingRendererReplacement_v212);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v212_variantCollapsedBanner,
+      thinkingRendererReplacement_v212,
+      'v2.1.2 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.2 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v212_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v212_variantNullGate, thinkingRendererReplacement_v212);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v212_variantNullGate,
+      thinkingRendererReplacement_v212,
+      'v2.1.2 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.2 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v213)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v213, redactedThinkingCallsiteReplacement_v213);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v213,
+      redactedThinkingCallsiteReplacement_v213,
+      'v2.1.3 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.3 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v213)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v213, thinkingCallsiteReplacement_v213);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v213,
+      thinkingCallsiteReplacement_v213,
+      'v2.1.3 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.3 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v213_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v213_variantCollapsedBanner, thinkingRendererReplacement_v213);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v213_variantCollapsedBanner,
+      thinkingRendererReplacement_v213,
+      'v2.1.3 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.3 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v213_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v213_variantNullGate, thinkingRendererReplacement_v213);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v213_variantNullGate,
+      thinkingRendererReplacement_v213,
+      'v2.1.3 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.3 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v214)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v214, redactedThinkingCallsiteReplacement_v214);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v214,
+      redactedThinkingCallsiteReplacement_v214,
+      'v2.1.4 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.4 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v214_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v214_variantCollapsedBanner, thinkingRendererReplacement_v214);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v214_variantCollapsedBanner,
+      thinkingRendererReplacement_v214,
+      'v2.1.4 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.4 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v214_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v214_variantNullGate, thinkingRendererReplacement_v214);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v214_variantNullGate,
+      thinkingRendererReplacement_v214,
+      'v2.1.4 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.4 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v216)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v216, redactedThinkingCallsiteReplacement_v216);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v216,
+      redactedThinkingCallsiteReplacement_v216,
+      'v2.1.6 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.6 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v216)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v216, thinkingCallsiteReplacement_v216);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v216,
+      thinkingCallsiteReplacement_v216,
+      'v2.1.6 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.6 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v216_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v216_variantCollapsedBanner, thinkingRendererReplacement_v216);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v216_variantCollapsedBanner,
+      thinkingRendererReplacement_v216,
+      'v2.1.6 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.6 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v216_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v216_variantNullGate, thinkingRendererReplacement_v216);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v216_variantNullGate,
+      thinkingRendererReplacement_v216,
+      'v2.1.6 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.6 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v217)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v217, redactedThinkingCallsiteReplacement_v217);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v217,
+      redactedThinkingCallsiteReplacement_v217,
+      'v2.1.7 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.7 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v217)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v217, thinkingCallsiteReplacement_v217);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v217,
+      thinkingCallsiteReplacement_v217,
+      'v2.1.7 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.7 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v217_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v217_variantCollapsedBanner, thinkingRendererReplacement_v217);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v217_variantCollapsedBanner,
+      thinkingRendererReplacement_v217,
+      'v2.1.7 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.7 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v217_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v217_variantNullGate, thinkingRendererReplacement_v217);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v217_variantNullGate,
+      thinkingRendererReplacement_v217,
+      'v2.1.7 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.7 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v219)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v219, redactedThinkingCallsiteReplacement_v219);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v219,
+      redactedThinkingCallsiteReplacement_v219,
+      'v2.1.9 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.9 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v219)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v219, thinkingCallsiteReplacement_v219);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v219,
+      thinkingCallsiteReplacement_v219,
+      'v2.1.9 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.9 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v219_variantCollapsedBanner)) {
-    content = content.replace(thinkingRendererSearchPattern_v219_variantCollapsedBanner, thinkingRendererReplacement_v219);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v219_variantCollapsedBanner,
+      thinkingRendererReplacement_v219,
+      'v2.1.9 thinking renderer (collapsed banner)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.9 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v219_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v219_variantNullGate, thinkingRendererReplacement_v219);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v219_variantNullGate,
+      thinkingRendererReplacement_v219,
+      'v2.1.9 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.9 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v21111)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v21111, redactedThinkingCallsiteReplacement_v21111);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v21111,
+      redactedThinkingCallsiteReplacement_v21111,
+      'v2.1.11 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.11 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v21111)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v21111, thinkingCallsiteReplacement_v21111);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v21111,
+      thinkingCallsiteReplacement_v21111,
+      'v2.1.11 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.11 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v21111_variantCollapsedBanner)) {
-    content = content.replace(
+    content = replaceOnceExact(
+      content,
       thinkingRendererSearchPattern_v21111_variantCollapsedBanner,
-      thinkingRendererReplacement_v21111
+      thinkingRendererReplacement_v21111,
+      'v2.1.11 thinking renderer (collapsed banner)'
     );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.11 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v21111_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v21111_variantNullGate, thinkingRendererReplacement_v21111);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v21111_variantNullGate,
+      thinkingRendererReplacement_v21111,
+      'v2.1.11 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.11 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v21112)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v21112, redactedThinkingCallsiteReplacement_v21112);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v21112,
+      redactedThinkingCallsiteReplacement_v21112,
+      'v2.1.12 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.12 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v21112)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v21112, thinkingCallsiteReplacement_v21112);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v21112,
+      thinkingCallsiteReplacement_v21112,
+      'v2.1.12 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.12 call site)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v21112_variantCollapsedBanner)) {
-    content = content.replace(
+    content = replaceOnceExact(
+      content,
       thinkingRendererSearchPattern_v21112_variantCollapsedBanner,
-      thinkingRendererReplacement_v21112
+      thinkingRendererReplacement_v21112,
+      'v2.1.12 thinking renderer (collapsed banner)'
     );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.12 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v21112_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v21112_variantNullGate, thinkingRendererReplacement_v21112);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v21112_variantNullGate,
+      thinkingRendererReplacement_v21112,
+      'v2.1.12 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.12 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v21114)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v21114, redactedThinkingCallsiteReplacement_v21114);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v21114,
+      redactedThinkingCallsiteReplacement_v21114,
+      'v2.1.14 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.14 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v21114)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v21114, thinkingCallsiteReplacement_v21114);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v21114,
+      thinkingCallsiteReplacement_v21114,
+      'v2.1.14 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.14 call site)');
   }
 
   // Regex fallback for v2.1.14 call sites (only when exact patterns fail).
   // Run after the exact-string replacements so we don't double-apply.
-  if (content.includes('VERSION:"2.1.14"')) {
+  if (!isNativeBinary && content.includes('VERSION:"2.1.14"')) {
     const result = applyRegexPatches_v21114(content);
     if (result.steps.length > 0) {
       content = result.out;
@@ -1289,32 +2017,118 @@ if (patch2Applied) {
   }
 
   if (content.includes(thinkingRendererSearchPattern_v21114_variantCollapsedBanner)) {
-    content = content.replace(
+    content = replaceOnceExact(
+      content,
       thinkingRendererSearchPattern_v21114_variantCollapsedBanner,
-      thinkingRendererReplacement_v21114
+      thinkingRendererReplacement_v21114,
+      'v2.1.14 thinking renderer (collapsed banner)'
     );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.14 thinking renderer)');
   }
 
   if (content.includes(thinkingRendererSearchPattern_v21114_variantNullGate)) {
-    content = content.replace(thinkingRendererSearchPattern_v21114_variantNullGate, thinkingRendererReplacement_v21114);
+    content = replaceOnceExact(
+      content,
+      thinkingRendererSearchPattern_v21114_variantNullGate,
+      thinkingRendererReplacement_v21114,
+      'v2.1.14 thinking renderer (null gate)'
+    );
     console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.14 thinking renderer)');
   }
 
   if (content.includes(redactedThinkingCallsiteSearchPattern_v21115)) {
-    content = content.replace(redactedThinkingCallsiteSearchPattern_v21115, redactedThinkingCallsiteReplacement_v21115);
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v21115,
+      redactedThinkingCallsiteReplacement_v21115,
+      'v2.1.15 redacted_thinking call site'
+    );
     console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.15 call site)');
   }
 
   if (content.includes(thinkingCallsiteSearchPattern_v21115)) {
-    content = content.replace(thinkingCallsiteSearchPattern_v21115, thinkingCallsiteReplacement_v21115);
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v21115,
+      thinkingCallsiteReplacement_v21115,
+      'v2.1.15 thinking call site'
+    );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.15 call site)');
   }
 
   // Regex fallback for v2.1.15 call sites (only when exact patterns fail).
   // Run after the exact-string replacements so we don't double-apply.
-  if (content.includes('VERSION:"2.1.15"')) {
+  if (!isNativeBinary && content.includes('VERSION:"2.1.15"')) {
     const result = applyRegexPatches_v21115(content);
+    if (result.steps.length > 0) {
+      content = result.out;
+      for (const step of result.steps) {
+        console.log(`✅ Patch 2 applied: ${step}`);
+      }
+    }
+  }
+
+  if (content.includes(redactedThinkingCallsiteSearchPattern_v21117)) {
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v21117,
+      redactedThinkingCallsiteReplacement_v21117,
+      'v2.1.17 redacted_thinking call site'
+    );
+    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.17 call site)');
+  }
+
+  if (content.includes(thinkingCallsiteSearchPattern_v21117)) {
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v21117,
+      thinkingCallsiteReplacement_v21117,
+      'v2.1.17 thinking call site'
+    );
+    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.17 call site)');
+  }
+
+  // Regex fallback for v2.1.17 call sites (only when exact patterns fail).
+  // Run after the exact-string replacements so we don't double-apply.
+  if (!isNativeBinary && content.includes('VERSION:"2.1.17"')) {
+    const result = applyRegexPatches_v21117(content);
+    if (result.steps.length > 0) {
+      content = result.out;
+      for (const step of result.steps) {
+        console.log(`✅ Patch 2 applied: ${step}`);
+      }
+    }
+  }
+
+  // Native/binary exact-string patches for v2.1.17.
+  // Apply in a loop in case the string appears more than once in the binary.
+  while (isNativeBinary && content.includes(redactedThinkingCallsiteSearchPattern_v21117_native)) {
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v21117_native,
+      redactedThinkingCallsiteReplacement_v21117_native,
+      'v2.1.17 redacted_thinking call site (native)'
+    );
+    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.17 native call site)');
+  }
+
+  while (isNativeBinary && content.includes(thinkingCallsiteSearchPattern_v21117_native)) {
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v21117_native,
+      thinkingCallsiteReplacement_v21117_native,
+      'v2.1.17 thinking call site (native)'
+    );
+    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.17 native call site)');
+  }
+
+  // Lightweight native/binary regex fallback.
+  // Use only when the binary still contains the short-circuit gate patterns.
+  if (
+    isNativeBinary &&
+    (content.includes('case"thinking":{if(!') || content.includes('case"redacted_thinking":if(!'))
+  ) {
+    const result = applyNativeRegexPatches(content);
     if (result.steps.length > 0) {
       content = result.out;
       for (const step of result.steps) {
@@ -1326,8 +2140,16 @@ if (patch2Applied) {
 
 // Write file
 console.log('\nWriting patched file...');
-fs.writeFileSync(targetPath, content, 'utf8');
+if (isNativeBinary && content.length !== originalContentLength) {
+  console.error('\n❌ Refusing to write: native/binary install patch would change file size.');
+  console.error(`Original length: ${originalContentLength}, patched length: ${content.length}`);
+  console.error('This would likely corrupt the native binary. Please report this as a bug.');
+  process.exit(1);
+}
+fs.writeFileSync(targetPath, content, fileEncoding);
 console.log('✅ File written successfully\n');
+
+adHocCodesignIfNeeded(targetPath);
 
 console.log('Summary:');
 console.log(`- Patch 1 (banner): ${patch1Applied ? 'APPLIED' : 'SKIPPED'}`);
