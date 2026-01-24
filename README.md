@@ -26,9 +26,9 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.1.17 (Updated 2026-01-23)
+**Current Version:** Claude Code 2.1.19 (Updated 2026-01-24)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19
 
 ## Quick Start
 
@@ -352,6 +352,23 @@ Then restart Claude Code.
 ## Verification
 
 Check if patches are applied:
+
+### v2.1.19
+
+```bash
+# Should include call sites that never short-circuit:
+grep -nF 'case"redacted_thinking":{let k;if(K[21]!==Y)k=H9.createElement(OU7,{addMargin:Y}),K[21]=Y,K[22]=k;else k=K[22];return k}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+grep -nF 'case"thinking":{let R=D&&!(!V||P===V)&&!T,x;if(K[23]!==Y||K[24]!==D||K[25]!==q||K[26]!==R||K[27]!==H)x=H9.createElement(oG1,{addMargin:Y,param:q,isTranscriptMode:!0,verbose:H,hideInTranscript:!1}),K[23]=Y,K[24]=D,K[25]=q,K[26]=R,K[27]=H,K[28]=x;else x=K[28];return x}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Native/binary installs store the JS bundle inside the executable.
+# Use ripgrep's `-a` flag to search binary data:
+rg -a -nF 'case"redacted_thinking":return t9.createElement(w_1,{addMargin:A});' \
+  ~/.local/share/claude/versions/2.1.19
+rg -a -nF 'case"thinking":{return t9.createElement(sFA,{addMargin:A,param:H,isTranscriptMode:!0,verbose:E,hideInTranscript:!1})}' \
+  ~/.local/share/claude/versions/2.1.19
+```
 
 ### v2.1.17
 
