@@ -147,7 +147,14 @@ function getNativeCandidatePaths(homeDir) {
         return b.patch - a.patch;
       };
 
-      const entries = fs.readdirSync(versionsDir).sort((a, b) => {
+      const entries = fs
+        .readdirSync(versionsDir)
+        .filter(entry => {
+          // Avoid accidentally patching backups created by this script or by users.
+          // Native installs often contain both `2.1.20` and `2.1.20.backup`.
+          return !String(entry).endsWith('.backup');
+        })
+        .sort((a, b) => {
         const va = parseVersionish(a);
         const vb = parseVersionish(b);
         if (va && vb) return compareVersionishDesc(va, vb);
@@ -156,7 +163,12 @@ function getNativeCandidatePaths(homeDir) {
         return a.localeCompare(b);
       });
       for (const entry of entries) {
-        candidates.push(path.join(versionsDir, entry));
+        const fullPath = path.join(versionsDir, entry);
+        try {
+          if (fs.statSync(fullPath).isFile()) candidates.push(fullPath);
+        } catch {
+          // Ignore entries we can't stat
+        }
       }
     }
   } catch {
@@ -1142,12 +1154,16 @@ const thinkingCallsiteReplacement_v21120 =
   'case"thinking":{let R=D&&!(!V||P===V)&&!T,b;if(K[23]!==Y||K[24]!==D||K[25]!==q||K[26]!==R||K[27]!==H)b=H9.createElement(Ej1,{addMargin:Y,param:q,isTranscriptMode:!0,verbose:H,hideInTranscript:!1}),K[23]=Y,K[24]=D,K[25]=q,K[26]=R,K[27]=H,K[28]=b;else b=K[28];return b}';
 
 // Regex-based fallback for v2.1.20 (inspired by tweakcc's thinkingVisibility.ts).
-// Keep this scoped to VERSION:"2.1.20" to avoid accidental matches across versions.
-const redactedThinkingCallsiteGateRegex_v21120 =
-  /(case"redacted_thinking":)\{if\(![$\w]+&&![$\w]+&&![$\w]+\)return null;/;
-const thinkingCallsiteGateRegex_v21120 = /(case"thinking":)\{if\(![$\w]+&&![$\w]+&&![$\w]+\)return null;/;
-const thinkingCallsiteArgsRegex_v21120 =
-  /(case"thinking":[\s\S]{0,900}?createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([$\w]+)(,verbose:)([$\w]+)(,hideInTranscript:)([$\w]+)(\}\))/;
+// NOTE: The caller gates this on `content.includes('VERSION:"2.1.20"')`.
+// We keep the regex itself relatively general to handle minor minifier diffs.
+const redactedThinkingCallsiteGateRegex_v21120 = /(case"redacted_thinking":\{?)(if\([^)]*\)return null;)/;
+
+// Unified pattern (tweakcc-style) that:
+// - removes the early-return gate `if(...)return null;`
+// - forces `isTranscriptMode:!0`
+// - forces `hideInTranscript:!1` (needed in 2.1.20 to prevent transcript hiding)
+const thinkingVisibilityRegex_v21120 =
+  /(case"thinking":\{?)(if\([^)]*\)return null;)([\s\S]{0,1200}?createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([^,}]+)(,verbose:)([^,}]+)(,hideInTranscript:)([^,}]+)(\}\))/;
 
 function applyRegexPatches_v21120(source) {
   let out = source;
@@ -1157,35 +1173,68 @@ function applyRegexPatches_v21120(source) {
     out = replaceRegexPreserveLength(
       out,
       redactedThinkingCallsiteGateRegex_v21120,
-      (_m, casePrefix) => `${casePrefix}{`,
+      (_m, casePrefix) => `${casePrefix}`,
       'v2.1.20 redacted_thinking call site gate (regex)'
     );
     steps.push('v2.1.20 redacted_thinking call site gate (regex)');
   }
 
-  if (thinkingCallsiteGateRegex_v21120.test(out)) {
+  if (thinkingVisibilityRegex_v21120.test(out)) {
     out = replaceRegexPreserveLength(
       out,
-      thinkingCallsiteGateRegex_v21120,
-      (_m, casePrefix) => `${casePrefix}{`,
-      'v2.1.20 thinking call site gate (regex)'
+      thinkingVisibilityRegex_v21120,
+      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
+        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
+      'v2.1.20 thinking visibility (regex)'
     );
-    steps.push('v2.1.20 thinking call site gate (regex)');
-  }
-
-  if (thinkingCallsiteArgsRegex_v21120.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingCallsiteArgsRegex_v21120,
-      (_m, casePrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideVar, suffix) => {
-        return `${casePrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`;
-      },
-      'v2.1.20 thinking call site args (regex)'
-    );
-    steps.push('v2.1.20 thinking call site args (regex)');
+    steps.push('v2.1.20 thinking visibility (regex)');
   }
 
   return { out, steps };
+}
+
+function applyRegexPatches_v21120_native(sourceBuf) {
+  if (!Buffer.isBuffer(sourceBuf)) {
+    throw new Error('applyRegexPatches_v21120_native expected a Buffer');
+  }
+
+  let text = sourceBuf.toString('latin1');
+  const steps = [];
+
+  {
+    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v21120.source, 'g');
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      gateRe,
+      (_m, casePrefix) => `${casePrefix}`,
+      'v2.1.20 redacted_thinking call site gate (native regex)'
+    );
+    text = out;
+    if (replacedCount > 0) {
+      steps.push(`v2.1.20 redacted_thinking call site gate (native regex) x${replacedCount}`);
+    }
+  }
+
+  {
+    const visRe = new RegExp(thinkingVisibilityRegex_v21120.source, 'g');
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      visRe,
+      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
+        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
+      'v2.1.20 thinking visibility (native regex)'
+    );
+    text = out;
+    if (replacedCount > 0) steps.push(`v2.1.20 thinking visibility (native regex) x${replacedCount}`);
+  }
+
+  const outBuf = Buffer.from(text, 'latin1');
+  if (outBuf.length !== sourceBuf.length) {
+    throw new Error(
+      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
+    );
+  }
+  return { out: outBuf, steps };
 }
 
 let patch1Applied = false;
@@ -1627,11 +1676,10 @@ if (content.includes(thinkingCallsiteSearchPattern_v21120)) {
 } else if (!isNativeBinary && content.includes('VERSION:"2.1.20"')) {
   const { steps } = applyRegexPatches_v21120(content);
   if (
-    steps.includes('v2.1.20 thinking call site gate (regex)') ||
-    steps.includes('v2.1.20 thinking call site args (regex)')
+    steps.includes('v2.1.20 thinking visibility (regex)')
   ) {
     patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.20 thinking call site (regex)');
+    patch2PlannedSteps.push('v2.1.20 thinking visibility (regex)');
   }
 }
 
@@ -2415,6 +2463,19 @@ if (patch2Applied) {
       'v2.1.17 thinking call site (native)'
     );
     console.log('✅ Patch 2 applied: thinking forced visible (v2.1.17 native call site)');
+  }
+
+  // Version-scoped native/binary regex fallback for v2.1.20.
+  // This mirrors the tweakcc-style unified regex (remove gate + force isTranscriptMode/hideInTranscript).
+  // Run before the generic native regex fallback so the logs are clearer and the match is tighter.
+  if (isNativeBinary && content.includes('VERSION:"2.1.20"')) {
+    const result = applyRegexPatches_v21120_native(content);
+    if (result.steps.length > 0) {
+      content = result.out;
+      for (const step of result.steps) {
+        console.log(`✅ Patch 2 applied: ${step}`);
+      }
+    }
   }
 
   // Lightweight native/binary regex fallback.
