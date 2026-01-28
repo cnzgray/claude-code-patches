@@ -26,9 +26,9 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.1.20 (Updated 2026-01-27)
+**Current Version:** Claude Code 2.1.22 (Updated 2026-01-28)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22
 
 ## Quick Start
 
@@ -366,6 +366,21 @@ grep -nF 'case"thinking":{let R=D&&!(!V||P===V)&&!T,b;if(K[23]!==Y||K[24]!==D||K
 # Identifiers vary across builds; use a regex search instead of exact strings:
 rg -a -n -P 'case\"thinking\":\\{return[\\s\\S]{0,400}isTranscriptMode:!0[\\s\\S]{0,400}hideInTranscript:!1' \
   ~/.local/share/claude/versions/2.1.20
+```
+
+### v2.1.22
+
+```bash
+# Should include call sites that never short-circuit:
+grep -nF 'case"redacted_thinking":{let E;if(K[21]!==Y)E=Y9.createElement(c8K,{addMargin:Y}),K[21]=Y,K[22]=E;else E=K[22];return E}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+grep -nF 'case"thinking":{let R=D&&!(!V||P===V)&&!T,b;if(K[23]!==Y||K[24]!==D||K[25]!==q||K[26]!==R||K[27]!==H)b=Y9.createElement(iM1,{addMargin:Y,param:q,isTranscriptMode:!0,verbose:H,hideInTranscript:!1}),K[23]=Y,K[24]=D,K[25]=q,K[26]=R,K[27]=H,K[28]=b;else b=K[28];return b}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Native/binary installs store the JS bundle inside the executable.
+# Identifiers vary across builds; use a regex search instead of exact strings:
+rg -a -n -P 'case\"thinking\":\\{return[\\s\\S]{0,400}isTranscriptMode:!0[\\s\\S]{0,400}hideInTranscript:!1' \
+  ~/.local/share/claude/versions/2.1.22
 ```
 
 ### v2.1.19
