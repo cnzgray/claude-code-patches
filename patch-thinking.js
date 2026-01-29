@@ -21,7 +21,7 @@ if (fileArgIndex >= 0 && !fileArgPath) {
 // Display help
 if (showHelp) {
   console.log(
-    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22)'
+    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23)'
   );
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
@@ -39,7 +39,7 @@ if (showHelp) {
 }
 
 console.log(
-  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22)'
+  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23)'
 );
 console.log('==============================================\n');
 
@@ -1169,6 +1169,24 @@ const thinkingCallsiteSearchPattern_v21122 =
 const thinkingCallsiteReplacement_v21122 =
   'case"thinking":{let R=D&&!(!V||P===V)&&!T,b;if(K[23]!==Y||K[24]!==D||K[25]!==q||K[26]!==R||K[27]!==H)b=Y9.createElement(iM1,{addMargin:Y,param:q,isTranscriptMode:!0,verbose:H,hideInTranscript:!1}),K[23]=Y,K[24]=D,K[25]=q,K[26]=R,K[27]=H,K[28]=b;else b=K[28];return b}';
 
+// Patch 2t: Force thinking visibility (v2.1.23).
+// 2.1.23 matches the same overall call-site structure as 2.1.22, but identifiers changed:
+// - createElement namespace: `z9`
+// - redacted_thinking renderer: `q7K`
+// - thinking renderer: `NP1`
+// We patch only the call sites:
+// - remove the short-circuit gate
+// - force isTranscriptMode=true
+// - force hideInTranscript=false
+const redactedThinkingCallsiteSearchPattern_v21123 =
+  'case"redacted_thinking":{if(!D&&!H&&!T)return null;let C;if(K[21]!==Y)C=z9.createElement(q7K,{addMargin:Y}),K[21]=Y,K[22]=C;else C=K[22];return C}';
+const redactedThinkingCallsiteReplacement_v21123 =
+  'case"redacted_thinking":{let C;if(K[21]!==Y)C=z9.createElement(q7K,{addMargin:Y}),K[21]=Y,K[22]=C;else C=K[22];return C}';
+const thinkingCallsiteSearchPattern_v21123 =
+  'case"thinking":{if(!D&&!H&&!T)return null;let R=D&&!(!f||P===f)&&!T,x;if(K[23]!==Y||K[24]!==D||K[25]!==q||K[26]!==R||K[27]!==H)x=z9.createElement(NP1,{addMargin:Y,param:q,isTranscriptMode:D,verbose:H,hideInTranscript:R}),K[23]=Y,K[24]=D,K[25]=q,K[26]=R,K[27]=H,K[28]=x;else x=K[28];return x}';
+const thinkingCallsiteReplacement_v21123 =
+  'case"thinking":{let R=D&&!(!f||P===f)&&!T,x;if(K[23]!==Y||K[24]!==D||K[25]!==q||K[26]!==R||K[27]!==H)x=z9.createElement(NP1,{addMargin:Y,param:q,isTranscriptMode:!0,verbose:H,hideInTranscript:!1}),K[23]=Y,K[24]=D,K[25]=q,K[26]=R,K[27]=H,K[28]=x;else x=K[28];return x}';
+
 // Regex-based fallback for v2.1.20 (inspired by tweakcc's thinkingVisibility.ts).
 // NOTE: The caller gates this on `content.includes('VERSION:"2.1.20"')`.
 // We keep the regex itself relatively general to handle minor minifier diffs.
@@ -1320,6 +1338,84 @@ function applyRegexPatches_v21122_native(sourceBuf) {
     );
     text = out;
     if (replacedCount > 0) steps.push(`v2.1.22 thinking visibility (native regex) x${replacedCount}`);
+  }
+
+  const outBuf = Buffer.from(text, 'latin1');
+  if (outBuf.length !== sourceBuf.length) {
+    throw new Error(
+      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
+    );
+  }
+  return { out: outBuf, steps };
+}
+
+// Regex-based fallback for v2.1.23 (tweakcc-style unified patch).
+// NOTE: The caller gates this on `content.includes('VERSION:"2.1.23"')`.
+// 2.1.23 uses the same structural patterns as 2.1.20/2.1.22.
+const redactedThinkingCallsiteGateRegex_v21123 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v21123 = thinkingVisibilityRegex_v21120;
+
+function applyRegexPatches_v21123(source) {
+  let out = source;
+  const steps = [];
+
+  if (redactedThinkingCallsiteGateRegex_v21123.test(out)) {
+    out = replaceRegexPreserveLength(
+      out,
+      redactedThinkingCallsiteGateRegex_v21123,
+      (_m, casePrefix) => `${casePrefix}`,
+      'v2.1.23 redacted_thinking call site gate (regex)'
+    );
+    steps.push('v2.1.23 redacted_thinking call site gate (regex)');
+  }
+
+  if (thinkingVisibilityRegex_v21123.test(out)) {
+    out = replaceRegexPreserveLength(
+      out,
+      thinkingVisibilityRegex_v21123,
+      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
+        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
+      'v2.1.23 thinking visibility (regex)'
+    );
+    steps.push('v2.1.23 thinking visibility (regex)');
+  }
+
+  return { out, steps };
+}
+
+function applyRegexPatches_v21123_native(sourceBuf) {
+  if (!Buffer.isBuffer(sourceBuf)) {
+    throw new Error('applyRegexPatches_v21123_native expected a Buffer');
+  }
+
+  let text = sourceBuf.toString('latin1');
+  const steps = [];
+
+  {
+    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v21123.source, 'g');
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      gateRe,
+      (_m, casePrefix) => `${casePrefix}`,
+      'v2.1.23 redacted_thinking call site gate (native regex)'
+    );
+    text = out;
+    if (replacedCount > 0) {
+      steps.push(`v2.1.23 redacted_thinking call site gate (native regex) x${replacedCount}`);
+    }
+  }
+
+  {
+    const visRe = new RegExp(thinkingVisibilityRegex_v21123.source, 'g');
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      visRe,
+      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
+        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
+      'v2.1.23 thinking visibility (native regex)'
+    );
+    text = out;
+    if (replacedCount > 0) steps.push(`v2.1.23 thinking visibility (native regex) x${replacedCount}`);
   }
 
   const outBuf = Buffer.from(text, 'latin1');
@@ -1803,6 +1899,32 @@ if (content.includes(thinkingCallsiteSearchPattern_v21122)) {
   }
 }
 
+if (content.includes(redactedThinkingCallsiteSearchPattern_v21123)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.1.23 redacted_thinking call site');
+} else if (content.includes(redactedThinkingCallsiteReplacement_v21123)) {
+  console.log('  ⚠️  Already applied (v2.1.23 redacted_thinking call site)');
+} else if (!isNativeBinary && content.includes('VERSION:"2.1.23"')) {
+  const { steps } = applyRegexPatches_v21123(content);
+  if (steps.includes('v2.1.23 redacted_thinking call site gate (regex)')) {
+    patch2Applied = true;
+    patch2PlannedSteps.push('v2.1.23 redacted_thinking call site (regex)');
+  }
+}
+
+if (content.includes(thinkingCallsiteSearchPattern_v21123)) {
+  patch2Applied = true;
+  patch2PlannedSteps.push('v2.1.23 thinking call site');
+} else if (content.includes(thinkingCallsiteReplacement_v21123)) {
+  console.log('  ⚠️  Already applied (v2.1.23 thinking call site)');
+} else if (!isNativeBinary && content.includes('VERSION:"2.1.23"')) {
+  const { steps } = applyRegexPatches_v21123(content);
+  if (steps.includes('v2.1.23 thinking visibility (regex)')) {
+    patch2Applied = true;
+    patch2PlannedSteps.push('v2.1.23 thinking visibility (regex)');
+  }
+}
+
 // Native/binary detection for v2.1.17 (exact-string only; regex not supported for native).
 if (isNativeBinary && content.includes(redactedThinkingCallsiteSearchPattern_v21117_native)) {
   patch2Applied = true;
@@ -1816,6 +1938,31 @@ if (isNativeBinary && content.includes(thinkingCallsiteSearchPattern_v21117_nati
   patch2PlannedSteps.push('v2.1.17 thinking call site (native)');
 } else if (isNativeBinary && content.includes(thinkingCallsiteReplacement_v21117_native)) {
   console.log('  ⚠️  Already applied (v2.1.17 thinking call site (native))');
+}
+
+// Version-scoped native/binary regex detection (tweakcc-style unified patch).
+// This improves robustness for bun-packed native binaries whose identifiers differ from npm builds.
+// Only used when no exact-string patterns matched.
+if (isNativeBinary && patch2PlannedSteps.length === 0) {
+  if (content.includes('VERSION:"2.1.20"')) {
+    const { steps } = applyRegexPatches_v21120_native(content);
+    if (steps.length > 0) {
+      patch2Applied = true;
+      patch2PlannedSteps.push(...steps);
+    }
+  } else if (content.includes('VERSION:"2.1.22"')) {
+    const { steps } = applyRegexPatches_v21122_native(content);
+    if (steps.length > 0) {
+      patch2Applied = true;
+      patch2PlannedSteps.push(...steps);
+    }
+  } else if (content.includes('VERSION:"2.1.23"')) {
+    const { steps } = applyRegexPatches_v21123_native(content);
+    if (steps.length > 0) {
+      patch2Applied = true;
+      patch2PlannedSteps.push(...steps);
+    }
+  }
 }
 
 // Lightweight native/binary regex fallback (for versions whose identifiers differ).
@@ -1879,11 +2026,15 @@ if (patch2PlannedSteps.length > 0) {
 	    content.includes(thinkingCallsiteReplacement_v21120) ||
 	    content.includes(redactedThinkingCallsiteReplacement_v21122) ||
 	    content.includes(thinkingCallsiteReplacement_v21122) ||
+	    content.includes(redactedThinkingCallsiteReplacement_v21123) ||
+	    content.includes(thinkingCallsiteReplacement_v21123) ||
 	    content.includes(redactedThinkingCallsiteReplacement_v21117_native) ||
 	    content.includes(thinkingCallsiteReplacement_v21117_native) ||
       (isNativeBinary && detectNativeAlreadyPatched(content));
 
-  if (!patch2AlreadyApplied) {
+  if (patch2AlreadyApplied) {
+    console.log('  ⚠️  Already applied');
+  } else {
     console.log('  ❌ Pattern not found - may need update for newer version');
   }
 }
@@ -2597,6 +2748,38 @@ if (patch2Applied) {
     }
   }
 
+  if (content.includes(redactedThinkingCallsiteSearchPattern_v21123)) {
+    content = replaceOnceExact(
+      content,
+      redactedThinkingCallsiteSearchPattern_v21123,
+      redactedThinkingCallsiteReplacement_v21123,
+      'v2.1.23 redacted_thinking call site'
+    );
+    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.23 call site)');
+  }
+
+  if (content.includes(thinkingCallsiteSearchPattern_v21123)) {
+    content = replaceOnceExact(
+      content,
+      thinkingCallsiteSearchPattern_v21123,
+      thinkingCallsiteReplacement_v21123,
+      'v2.1.23 thinking call site'
+    );
+    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.23 call site)');
+  }
+
+  // Regex fallback for v2.1.23 call sites (only when exact patterns fail).
+  // Run after the exact-string replacements so we don't double-apply.
+  if (!isNativeBinary && content.includes('VERSION:"2.1.23"')) {
+    const result = applyRegexPatches_v21123(content);
+    if (result.steps.length > 0) {
+      content = result.out;
+      for (const step of result.steps) {
+        console.log(`✅ Patch 2 applied: ${step}`);
+      }
+    }
+  }
+
   // Native/binary exact-string patches for v2.1.17.
   // Apply in a loop in case the string appears more than once in the binary.
   while (isNativeBinary && content.includes(redactedThinkingCallsiteSearchPattern_v21117_native)) {
@@ -2635,6 +2818,17 @@ if (patch2Applied) {
   // Version-scoped native/binary regex fallback for v2.1.22.
   if (isNativeBinary && content.includes('VERSION:"2.1.22"')) {
     const result = applyRegexPatches_v21122_native(content);
+    if (result.steps.length > 0) {
+      content = result.out;
+      for (const step of result.steps) {
+        console.log(`✅ Patch 2 applied: ${step}`);
+      }
+    }
+  }
+
+  // Version-scoped native/binary regex fallback for v2.1.23.
+  if (isNativeBinary && content.includes('VERSION:"2.1.23"')) {
+    const result = applyRegexPatches_v21123_native(content);
     if (result.steps.length > 0) {
       content = result.out;
       for (const step of result.steps) {
