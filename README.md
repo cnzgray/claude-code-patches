@@ -6,6 +6,7 @@ Enhance Claude Code with custom patches for thinking display and subagent model 
 
 1. **[Thinking Display Patch](#thinking-display-patch)** - Make thinking blocks visible by default
 2. **[Subagent Model Configuration](#subagent-model-configuration)** - Configure which models subagents use
+3. **[NPM Deprecation Warning Patch](#npm-deprecation-warning-patch)** - Remove the “switched from npm to native installer” banner
 
 ---
 
@@ -51,6 +52,27 @@ That's it! Thinking blocks now display inline without `ctrl+o`.
 - ✅ All Node version managers (NVM, nodenv, asdf, etc.)
 
 **macOS note (native/binary installs):** The native `claude` binary is code-signed. After patching, it must be re-signed (ad-hoc) or macOS may kill it on launch. The patch script handles this automatically; if needed you can run `codesign --force --deep --sign - /path/to/claude` yourself.
+
+---
+
+## NPM Deprecation Warning Patch
+
+If your npm-installed Claude Code shows a banner like:
+
+```
+Claude Code has switched from npm to native installer. Run `claude install` ...
+```
+
+You can remove just that notification (without affecting other UI) by patching the compiled `cli.js`:
+
+```bash
+node patch-npm-deprecation-warning.js
+```
+
+Options:
+- `--dry-run` preview changes
+- `--restore` restore from `cli.js.backup`
+- `--file /path/to/cli.js` patch a specific file
 
 ## What This Patch Does
 
