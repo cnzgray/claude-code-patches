@@ -27,9 +27,9 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.1.23 (Updated 2026-01-29)
+**Current Version:** Claude Code 2.1.27 (Updated 2026-01-31)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27
 
 ## Quick Start
 
@@ -68,6 +68,8 @@ You can remove just that notification (without affecting other UI) by patching t
 ```bash
 node patch-npm-deprecation-warning.js
 ```
+
+**Also supports native/binary installs:** patch the `claude` binary in-place (macOS may require re-signing; this script attempts ad-hoc re-sign automatically).
 
 Options:
 - `--dry-run` preview changes
