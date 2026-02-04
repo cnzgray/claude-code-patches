@@ -21,7 +21,7 @@ if (fileArgIndex >= 0 && !fileArgPath) {
 // Display help
 if (showHelp) {
   console.log(
-    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27)'
+    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30)'
   );
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
@@ -39,7 +39,7 @@ if (showHelp) {
 }
 
 console.log(
-  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27)'
+  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30)'
 );
 console.log('==============================================\n');
 
@@ -1521,6 +1521,85 @@ function applyRegexPatches_v21127_native(sourceBuf) {
   return { out: outBuf, steps };
 }
 
+// Regex-based fallback for v2.1.30 (tweakcc-style unified patch, adjusted for 2.1.30 call site changes).
+// NOTE: The caller gates this on `content.includes('VERSION:"2.1.30"')`.
+// In 2.1.30 the thinking call site no longer includes `verbose:` in the createElement props.
+const redactedThinkingCallsiteGateRegex_v2130 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v2130 =
+  /(case"thinking":\{?)(if\([^)]*\)return null;)([\s\S]{0,1400}?createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([^,}]+)(,hideInTranscript:)([^,}]+)(\}\))/;
+
+function applyRegexPatches_v2130(source) {
+  let out = source;
+  const steps = [];
+
+  if (redactedThinkingCallsiteGateRegex_v2130.test(out)) {
+    out = replaceRegexPreserveLength(
+      out,
+      redactedThinkingCallsiteGateRegex_v2130,
+      (_m, casePrefix) => `${casePrefix}`,
+      'v2.1.30 redacted_thinking call site gate (regex)'
+    );
+    steps.push('v2.1.30 redacted_thinking call site gate (regex)');
+  }
+
+  if (thinkingVisibilityRegex_v2130.test(out)) {
+    out = replaceRegexPreserveLength(
+      out,
+      thinkingVisibilityRegex_v2130,
+      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
+        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
+      'v2.1.30 thinking visibility (regex)'
+    );
+    steps.push('v2.1.30 thinking visibility (regex)');
+  }
+
+  return { out, steps };
+}
+
+function applyRegexPatches_v2130_native(sourceBuf) {
+  if (!Buffer.isBuffer(sourceBuf)) {
+    throw new Error('applyRegexPatches_v2130_native expected a Buffer');
+  }
+
+  let text = sourceBuf.toString('latin1');
+  const steps = [];
+
+  {
+    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v2130.source, 'g');
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      gateRe,
+      (_m, casePrefix) => `${casePrefix}`,
+      'v2.1.30 redacted_thinking call site gate (native regex)'
+    );
+    text = out;
+    if (replacedCount > 0) {
+      steps.push(`v2.1.30 redacted_thinking call site gate (native regex) x${replacedCount}`);
+    }
+  }
+
+  {
+    const visRe = new RegExp(thinkingVisibilityRegex_v2130.source, 'g');
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
+      text,
+      visRe,
+      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
+        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
+      'v2.1.30 thinking visibility (native regex)'
+    );
+    text = out;
+    if (replacedCount > 0) steps.push(`v2.1.30 thinking visibility (native regex) x${replacedCount}`);
+  }
+
+  const outBuf = Buffer.from(text, 'latin1');
+  if (outBuf.length !== sourceBuf.length) {
+    throw new Error(
+      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
+    );
+  }
+  return { out: outBuf, steps };
+}
+
 let patch1Applied = false;
 let patch2Applied = false;
 let patch1AlreadyApplied = false;
@@ -2032,6 +2111,19 @@ if (!isNativeBinary && content.includes('VERSION:"2.1.27"')) {
   }
 }
 
+// v2.1.30: call site changed (no `verbose:` prop), so we use a dedicated version-scoped regex.
+if (!isNativeBinary && content.includes('VERSION:"2.1.30"')) {
+  const { steps } = applyRegexPatches_v2130(content);
+  if (steps.includes('v2.1.30 redacted_thinking call site gate (regex)')) {
+    patch2Applied = true;
+    patch2PlannedSteps.push('v2.1.30 redacted_thinking call site (regex)');
+  }
+  if (steps.includes('v2.1.30 thinking visibility (regex)')) {
+    patch2Applied = true;
+    patch2PlannedSteps.push('v2.1.30 thinking visibility (regex)');
+  }
+}
+
 // Native/binary detection for v2.1.17 (exact-string only; regex not supported for native).
 if (isNativeBinary && content.includes(redactedThinkingCallsiteSearchPattern_v21117_native)) {
   patch2Applied = true;
@@ -2071,6 +2163,12 @@ if (isNativeBinary && patch2PlannedSteps.length === 0) {
     }
   } else if (content.includes('VERSION:"2.1.27"')) {
     const { steps } = applyRegexPatches_v21127_native(content);
+    if (steps.length > 0) {
+      patch2Applied = true;
+      patch2PlannedSteps.push(...steps);
+    }
+  } else if (content.includes('VERSION:"2.1.30"')) {
+    const { steps } = applyRegexPatches_v2130_native(content);
     if (steps.length > 0) {
       patch2Applied = true;
       patch2PlannedSteps.push(...steps);
@@ -2906,6 +3004,18 @@ if (patch2Applied) {
     }
   }
 
+  // Regex fallback for v2.1.30 call sites.
+  // Run after the exact-string replacements so we don't double-apply.
+  if (!isNativeBinary && content.includes('VERSION:"2.1.30"')) {
+    const result = applyRegexPatches_v2130(content);
+    if (result.steps.length > 0) {
+      content = result.out;
+      for (const step of result.steps) {
+        console.log(`✅ Patch 2 applied: ${step}`);
+      }
+    }
+  }
+
   // Native/binary exact-string patches for v2.1.17.
   // Apply in a loop in case the string appears more than once in the binary.
   while (isNativeBinary && content.includes(redactedThinkingCallsiteSearchPattern_v21117_native)) {
@@ -2966,6 +3076,17 @@ if (patch2Applied) {
   // Version-scoped native/binary regex fallback for v2.1.27.
   if (isNativeBinary && content.includes('VERSION:"2.1.27"')) {
     const result = applyRegexPatches_v21127_native(content);
+    if (result.steps.length > 0) {
+      content = result.out;
+      for (const step of result.steps) {
+        console.log(`✅ Patch 2 applied: ${step}`);
+      }
+    }
+  }
+
+  // Version-scoped native/binary regex fallback for v2.1.30.
+  if (isNativeBinary && content.includes('VERSION:"2.1.30"')) {
+    const result = applyRegexPatches_v2130_native(content);
     if (result.steps.length > 0) {
       content = result.out;
       for (const step of result.steps) {
