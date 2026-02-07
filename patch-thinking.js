@@ -902,35 +902,6 @@ const redactedThinkingCallsiteRegex_v21114 =
 const thinkingCallsiteRegex_v21114 =
   /(case"thinking":)\{if\(![$\w]+&&![$\w]+\)return null;return ([$\w]+\.createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([$\w]+)(,verbose:)([$\w]+)(,hideInTranscript:)([^}]+)\}\)\}/;
 
-function applyRegexPatches_v21114(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteRegex_v21114.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteRegex_v21114,
-      (_m, casePrefix, returnExpr) => `${casePrefix}${returnExpr}`,
-      'v2.1.14 redacted_thinking call site (regex)'
-    );
-    steps.push('v2.1.14 redacted_thinking call site (regex)');
-  }
-
-  if (thinkingCallsiteRegex_v21114.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingCallsiteRegex_v21114,
-      (_m, casePrefix, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey) => {
-        return `${casePrefix}{return ${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1})}`;
-      },
-      'v2.1.14 thinking call site (regex)'
-    );
-    steps.push('v2.1.14 thinking call site (regex)');
-  }
-
-  return { out, steps };
-}
-
 // Patch 2o: Force thinking visibility (v2.1.15).
 // In 2.1.15, the call sites use a memo-cache branch (K[...] comparisons) and
 // the thinking renderer is now `k_1`. The key bits are still the same:
@@ -958,45 +929,6 @@ const redactedThinkingCallsiteGateRegex_v21115 =
 const thinkingCallsiteGateRegex_v21115 = /(case"thinking":)\{if\(![$\w]+&&![$\w]+\)return null;/;
 const thinkingCallsiteArgsRegex_v21115 =
   /(case"thinking":[\s\S]{0,800}?createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([$\w]+)(,verbose:)([$\w]+)(,hideInTranscript:)([$\w]+)(\}\))/;
-
-function applyRegexPatches_v21115(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v21115.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v21115,
-      (_m, casePrefix) => `${casePrefix}{`,
-      'v2.1.15 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.15 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingCallsiteGateRegex_v21115.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingCallsiteGateRegex_v21115,
-      (_m, casePrefix) => `${casePrefix}{`,
-      'v2.1.15 thinking call site gate (regex)'
-    );
-    steps.push('v2.1.15 thinking call site gate (regex)');
-  }
-
-  if (thinkingCallsiteArgsRegex_v21115.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingCallsiteArgsRegex_v21115,
-      (_m, casePrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideVar, suffix) => {
-        return `${casePrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`;
-      },
-      'v2.1.15 thinking call site args (regex)'
-    );
-    steps.push('v2.1.15 thinking call site args (regex)');
-  }
-
-  return { out, steps };
-}
 
 // Patch 2p: Force thinking visibility (v2.1.17).
 // In 2.1.17, identifiers changed again:
@@ -1051,45 +983,6 @@ const thinkingCallsiteGateRegex_v21117 = /(case"thinking":)\{if\(![$\w]+&&![$\w]
 const thinkingCallsiteArgsRegex_v21117 =
   /(case"thinking":[\s\S]{0,800}?createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([$\w]+)(,verbose:)([$\w]+)(,hideInTranscript:)([$\w]+)(\}\))/;
 
-function applyRegexPatches_v21117(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v21117.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v21117,
-      (_m, casePrefix) => `${casePrefix}{`,
-      'v2.1.17 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.17 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingCallsiteGateRegex_v21117.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingCallsiteGateRegex_v21117,
-      (_m, casePrefix) => `${casePrefix}{`,
-      'v2.1.17 thinking call site gate (regex)'
-    );
-    steps.push('v2.1.17 thinking call site gate (regex)');
-  }
-
-  if (thinkingCallsiteArgsRegex_v21117.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingCallsiteArgsRegex_v21117,
-      (_m, casePrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideVar, suffix) => {
-        return `${casePrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`;
-      },
-      'v2.1.17 thinking call site args (regex)'
-    );
-    steps.push('v2.1.17 thinking call site args (regex)');
-  }
-
-  return { out, steps };
-}
-
 // Patch 2q: Force thinking visibility (v2.1.19).
 // In 2.1.19 (npm build), the call-site gate adds a third condition:
 // - if(!isTranscriptMode && !verbose && !T) return null
@@ -1114,44 +1007,77 @@ const thinkingCallsiteGateRegex_v21119 = /(case"thinking":)\{if\(![$\w]+&&![$\w]
 const thinkingCallsiteArgsRegex_v21119 =
   /(case"thinking":[\s\S]{0,900}?createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([$\w]+)(,verbose:)([$\w]+)(,hideInTranscript:)([$\w]+)(\}\))/;
 
-function applyRegexPatches_v21119(source) {
-  let out = source;
-  const steps = [];
+const thinkingCallsiteReplacer_v21114 =
+  (_m, casePrefix, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey) =>
+    `${casePrefix}{return ${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1})}`;
 
-  if (redactedThinkingCallsiteGateRegex_v21119.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v21119,
-      (_m, casePrefix) => `${casePrefix}{`,
-      'v2.1.19 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.19 redacted_thinking call site gate (regex)');
-  }
+const applyRegexPatches_v21114 = source =>
+  applyJsRegexPatchRules(source, [
+    {
+      regex: redactedThinkingCallsiteRegex_v21114,
+      replacer: (_m, casePrefix, returnExpr) => `${casePrefix}${returnExpr}`,
+      label: 'v2.1.14 redacted_thinking call site (regex)',
+      step: 'v2.1.14 redacted_thinking call site (regex)',
+    },
+    {
+      regex: thinkingCallsiteRegex_v21114,
+      replacer: thinkingCallsiteReplacer_v21114,
+      label: 'v2.1.14 thinking call site (regex)',
+      step: 'v2.1.14 thinking call site (regex)',
+    },
+  ]);
 
-  if (thinkingCallsiteGateRegex_v21119.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingCallsiteGateRegex_v21119,
-      (_m, casePrefix) => `${casePrefix}{`,
-      'v2.1.19 thinking call site gate (regex)'
-    );
-    steps.push('v2.1.19 thinking call site gate (regex)');
-  }
+const thinkingCallsiteArgsVisibilityReplacer =
+  (_m, casePrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideVar, suffix) =>
+    `${casePrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`;
 
-  if (thinkingCallsiteArgsRegex_v21119.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingCallsiteArgsRegex_v21119,
-      (_m, casePrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideVar, suffix) => {
-        return `${casePrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`;
+function buildCallsiteGateAndArgsRegexPatch(version, redactedGateRegex, thinkingGateRegex, thinkingArgsRegex) {
+  const versionLabel = `v${version}`;
+  const addOpeningBraceReplacer = (_m, casePrefix) => `${casePrefix}{`;
+
+  return source =>
+    applyJsRegexPatchRules(source, [
+      {
+        regex: redactedGateRegex,
+        replacer: addOpeningBraceReplacer,
+        label: `${versionLabel} redacted_thinking call site gate (regex)`,
+        step: `${versionLabel} redacted_thinking call site gate (regex)`,
       },
-      'v2.1.19 thinking call site args (regex)'
-    );
-    steps.push('v2.1.19 thinking call site args (regex)');
-  }
-
-  return { out, steps };
+      {
+        regex: thinkingGateRegex,
+        replacer: addOpeningBraceReplacer,
+        label: `${versionLabel} thinking call site gate (regex)`,
+        step: `${versionLabel} thinking call site gate (regex)`,
+      },
+      {
+        regex: thinkingArgsRegex,
+        replacer: thinkingCallsiteArgsVisibilityReplacer,
+        label: `${versionLabel} thinking call site args (regex)`,
+        step: `${versionLabel} thinking call site args (regex)`,
+      },
+    ]);
 }
+
+const applyRegexPatches_v21115 = buildCallsiteGateAndArgsRegexPatch(
+  '2.1.15',
+  redactedThinkingCallsiteGateRegex_v21115,
+  thinkingCallsiteGateRegex_v21115,
+  thinkingCallsiteArgsRegex_v21115
+);
+
+const applyRegexPatches_v21117 = buildCallsiteGateAndArgsRegexPatch(
+  '2.1.17',
+  redactedThinkingCallsiteGateRegex_v21117,
+  thinkingCallsiteGateRegex_v21117,
+  thinkingCallsiteArgsRegex_v21117
+);
+
+const applyRegexPatches_v21119 = buildCallsiteGateAndArgsRegexPatch(
+  '2.1.19',
+  redactedThinkingCallsiteGateRegex_v21119,
+  thinkingCallsiteGateRegex_v21119,
+  thinkingCallsiteArgsRegex_v21119
+);
 
 // Patch 2r: Force thinking visibility (v2.1.20).
 // In 2.1.20 (npm build), the call-site shape matches v2.1.19:
@@ -1215,688 +1141,57 @@ const redactedThinkingCallsiteGateRegex_v21120 = /(case"redacted_thinking":\{?)(
 const thinkingVisibilityRegex_v21120 =
   /(case"thinking":\{?)(if\([^)]*\)return null;)([\s\S]{0,1200}?createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([^,}]+)(,verbose:)([^,}]+)(,hideInTranscript:)([^,}]+)(\}\))/;
 
-function applyRegexPatches_v21120(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v21120.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v21120,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.20 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.20 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingVisibilityRegex_v21120.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingVisibilityRegex_v21120,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
-      'v2.1.20 thinking visibility (regex)'
-    );
-    steps.push('v2.1.20 thinking visibility (regex)');
-  }
-
-  return { out, steps };
-}
-
-function applyRegexPatches_v21120_native(sourceBuf) {
-  if (!Buffer.isBuffer(sourceBuf)) {
-    throw new Error('applyRegexPatches_v21120_native expected a Buffer');
-  }
-
-  let text = sourceBuf.toString('latin1');
-  const steps = [];
-
-  {
-    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v21120.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      gateRe,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.20 redacted_thinking call site gate (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) {
-      steps.push(`v2.1.20 redacted_thinking call site gate (native regex) x${replacedCount}`);
-    }
-  }
-
-  {
-    const visRe = new RegExp(thinkingVisibilityRegex_v21120.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      visRe,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
-      'v2.1.20 thinking visibility (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) steps.push(`v2.1.20 thinking visibility (native regex) x${replacedCount}`);
-  }
-
-  const outBuf = Buffer.from(text, 'latin1');
-  if (outBuf.length !== sourceBuf.length) {
-    throw new Error(
-      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
-    );
-  }
-  return { out: outBuf, steps };
-}
-
-// Regex-based fallback for v2.1.22 (tweakcc-style unified patch).
-// NOTE: The caller gates this on `content.includes('VERSION:"2.1.22"')`.
-// 2.1.22 uses the same structural patterns as 2.1.20.
+// Regex-based fallback for v2.1.22/v2.1.23/v2.1.27 share 2.1.20 structure.
 const redactedThinkingCallsiteGateRegex_v21122 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v21122 = thinkingVisibilityRegex_v21120;
-
-function applyRegexPatches_v21122(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v21122.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v21122,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.22 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.22 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingVisibilityRegex_v21122.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingVisibilityRegex_v21122,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
-      'v2.1.22 thinking visibility (regex)'
-    );
-    steps.push('v2.1.22 thinking visibility (regex)');
-  }
-
-  return { out, steps };
-}
-
-function applyRegexPatches_v21122_native(sourceBuf) {
-  if (!Buffer.isBuffer(sourceBuf)) {
-    throw new Error('applyRegexPatches_v21122_native expected a Buffer');
-  }
-
-  let text = sourceBuf.toString('latin1');
-  const steps = [];
-
-  {
-    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v21122.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      gateRe,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.22 redacted_thinking call site gate (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) {
-      steps.push(`v2.1.22 redacted_thinking call site gate (native regex) x${replacedCount}`);
-    }
-  }
-
-  {
-    const visRe = new RegExp(thinkingVisibilityRegex_v21122.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      visRe,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
-      'v2.1.22 thinking visibility (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) steps.push(`v2.1.22 thinking visibility (native regex) x${replacedCount}`);
-  }
-
-  const outBuf = Buffer.from(text, 'latin1');
-  if (outBuf.length !== sourceBuf.length) {
-    throw new Error(
-      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
-    );
-  }
-  return { out: outBuf, steps };
-}
-
-// Regex-based fallback for v2.1.23 (tweakcc-style unified patch).
-// NOTE: The caller gates this on `content.includes('VERSION:"2.1.23"')`.
-// 2.1.23 uses the same structural patterns as 2.1.20/2.1.22.
 const redactedThinkingCallsiteGateRegex_v21123 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v21123 = thinkingVisibilityRegex_v21120;
-
-function applyRegexPatches_v21123(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v21123.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v21123,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.23 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.23 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingVisibilityRegex_v21123.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingVisibilityRegex_v21123,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
-      'v2.1.23 thinking visibility (regex)'
-    );
-    steps.push('v2.1.23 thinking visibility (regex)');
-  }
-
-  return { out, steps };
-}
-
-function applyRegexPatches_v21123_native(sourceBuf) {
-  if (!Buffer.isBuffer(sourceBuf)) {
-    throw new Error('applyRegexPatches_v21123_native expected a Buffer');
-  }
-
-  let text = sourceBuf.toString('latin1');
-  const steps = [];
-
-  {
-    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v21123.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      gateRe,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.23 redacted_thinking call site gate (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) {
-      steps.push(`v2.1.23 redacted_thinking call site gate (native regex) x${replacedCount}`);
-    }
-  }
-
-  {
-    const visRe = new RegExp(thinkingVisibilityRegex_v21123.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      visRe,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
-      'v2.1.23 thinking visibility (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) steps.push(`v2.1.23 thinking visibility (native regex) x${replacedCount}`);
-  }
-
-  const outBuf = Buffer.from(text, 'latin1');
-  if (outBuf.length !== sourceBuf.length) {
-    throw new Error(
-      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
-    );
-  }
-  return { out: outBuf, steps };
-}
-
-// Regex-based fallback for v2.1.27 (tweakcc-style unified patch).
-// NOTE: The caller gates this on `content.includes('VERSION:"2.1.27"')`.
-// 2.1.27 uses the same structural patterns as 2.1.20/2.1.22/2.1.23.
 const redactedThinkingCallsiteGateRegex_v21127 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v21127 = thinkingVisibilityRegex_v21120;
 
-function applyRegexPatches_v21127(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v21127.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v21127,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.27 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.27 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingVisibilityRegex_v21127.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingVisibilityRegex_v21127,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
-      'v2.1.27 thinking visibility (regex)'
-    );
-    steps.push('v2.1.27 thinking visibility (regex)');
-  }
-
-  return { out, steps };
-}
-
-function applyRegexPatches_v21127_native(sourceBuf) {
-  if (!Buffer.isBuffer(sourceBuf)) {
-    throw new Error('applyRegexPatches_v21127_native expected a Buffer');
-  }
-
-  let text = sourceBuf.toString('latin1');
-  const steps = [];
-
-  {
-    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v21127.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      gateRe,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.27 redacted_thinking call site gate (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) {
-      steps.push(`v2.1.27 redacted_thinking call site gate (native regex) x${replacedCount}`);
-    }
-  }
-
-  {
-    const visRe = new RegExp(thinkingVisibilityRegex_v21127.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      visRe,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`,
-      'v2.1.27 thinking visibility (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) steps.push(`v2.1.27 thinking visibility (native regex) x${replacedCount}`);
-  }
-
-  const outBuf = Buffer.from(text, 'latin1');
-  if (outBuf.length !== sourceBuf.length) {
-    throw new Error(
-      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
-    );
-  }
-  return { out: outBuf, steps };
-}
-
-// Regex-based fallback for v2.1.30 (tweakcc-style unified patch, adjusted for 2.1.30 call site changes).
-// NOTE: The caller gates this on `content.includes('VERSION:"2.1.30"')`.
-// In 2.1.30 the thinking call site no longer includes `verbose:` in the createElement props.
+// In v2.1.30+, thinking call site no longer passes `verbose:` at this point.
 const redactedThinkingCallsiteGateRegex_v2130 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v2130 =
   /(case"thinking":\{?)(if\([^)]*\)return null;)([\s\S]{0,1400}?createElement\([$\w]+,\{addMargin:[$\w]+,param:[$\w]+,isTranscriptMode:)([^,}]+)(,hideInTranscript:)([^,}]+)(\}\))/;
-
-function applyRegexPatches_v2130(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v2130.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v2130,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.30 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.30 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingVisibilityRegex_v2130.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingVisibilityRegex_v2130,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.30 thinking visibility (regex)'
-    );
-    steps.push('v2.1.30 thinking visibility (regex)');
-  }
-
-  return { out, steps };
-}
-
-function applyRegexPatches_v2130_native(sourceBuf) {
-  if (!Buffer.isBuffer(sourceBuf)) {
-    throw new Error('applyRegexPatches_v2130_native expected a Buffer');
-  }
-
-  let text = sourceBuf.toString('latin1');
-  const steps = [];
-
-  {
-    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v2130.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      gateRe,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.30 redacted_thinking call site gate (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) {
-      steps.push(`v2.1.30 redacted_thinking call site gate (native regex) x${replacedCount}`);
-    }
-  }
-
-  {
-    const visRe = new RegExp(thinkingVisibilityRegex_v2130.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      visRe,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.30 thinking visibility (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) steps.push(`v2.1.30 thinking visibility (native regex) x${replacedCount}`);
-  }
-
-  const outBuf = Buffer.from(text, 'latin1');
-  if (outBuf.length !== sourceBuf.length) {
-    throw new Error(
-      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
-    );
-  }
-  return { out: outBuf, steps };
-}
-
-// Regex-based fallback for v2.1.31 (same structural patterns as 2.1.30).
-// NOTE: The caller gates this on `content.includes('VERSION:"2.1.31"')`.
 const redactedThinkingCallsiteGateRegex_v2131 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v2131 = thinkingVisibilityRegex_v2130;
-
-function applyRegexPatches_v2131(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v2131.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v2131,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.31 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.31 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingVisibilityRegex_v2131.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingVisibilityRegex_v2131,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.31 thinking visibility (regex)'
-    );
-    steps.push('v2.1.31 thinking visibility (regex)');
-  }
-
-  return { out, steps };
-}
-
-function applyRegexPatches_v2131_native(sourceBuf) {
-  if (!Buffer.isBuffer(sourceBuf)) {
-    throw new Error('applyRegexPatches_v2131_native expected a Buffer');
-  }
-
-  let text = sourceBuf.toString('latin1');
-  const steps = [];
-
-  {
-    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v2131.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      gateRe,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.31 redacted_thinking call site gate (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) {
-      steps.push(`v2.1.31 redacted_thinking call site gate (native regex) x${replacedCount}`);
-    }
-  }
-
-  {
-    const visRe = new RegExp(thinkingVisibilityRegex_v2131.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      visRe,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.31 thinking visibility (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) steps.push(`v2.1.31 thinking visibility (native regex) x${replacedCount}`);
-  }
-
-  const outBuf = Buffer.from(text, 'latin1');
-  if (outBuf.length !== sourceBuf.length) {
-    throw new Error(
-      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
-    );
-  }
-  return { out: outBuf, steps };
-}
-
-// Regex-based fallback for v2.1.32 (same structural patterns as 2.1.30/2.1.31).
-// NOTE: The caller gates this on `content.includes('VERSION:"2.1.32"')`.
 const redactedThinkingCallsiteGateRegex_v2132 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v2132 = thinkingVisibilityRegex_v2130;
-
-function applyRegexPatches_v2132(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v2132.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v2132,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.32 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.32 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingVisibilityRegex_v2132.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingVisibilityRegex_v2132,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.32 thinking visibility (regex)'
-    );
-    steps.push('v2.1.32 thinking visibility (regex)');
-  }
-
-  return { out, steps };
-}
-
-function applyRegexPatches_v2132_native(sourceBuf) {
-  if (!Buffer.isBuffer(sourceBuf)) {
-    throw new Error('applyRegexPatches_v2132_native expected a Buffer');
-  }
-
-  let text = sourceBuf.toString('latin1');
-  const steps = [];
-
-  {
-    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v2132.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      gateRe,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.32 redacted_thinking call site gate (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) {
-      steps.push(`v2.1.32 redacted_thinking call site gate (native regex) x${replacedCount}`);
-    }
-  }
-
-  {
-    const visRe = new RegExp(thinkingVisibilityRegex_v2132.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      visRe,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.32 thinking visibility (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) steps.push(`v2.1.32 thinking visibility (native regex) x${replacedCount}`);
-  }
-
-  const outBuf = Buffer.from(text, 'latin1');
-  if (outBuf.length !== sourceBuf.length) {
-    throw new Error(
-      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
-    );
-  }
-  return { out: outBuf, steps };
-}
-
-// Regex-based fallback for v2.1.33 (same structural patterns as 2.1.30/2.1.31/2.1.32).
-// NOTE: The caller gates this on `content.includes('VERSION:"2.1.33"')`.
 const redactedThinkingCallsiteGateRegex_v2133 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v2133 = thinkingVisibilityRegex_v2130;
-
-function applyRegexPatches_v2133(source) {
-  let out = source;
-  const steps = [];
-
-  if (redactedThinkingCallsiteGateRegex_v2133.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v2133,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.33 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.33 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingVisibilityRegex_v2133.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingVisibilityRegex_v2133,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.33 thinking visibility (regex)'
-    );
-    steps.push('v2.1.33 thinking visibility (regex)');
-  }
-
-  return { out, steps };
-}
-
-function applyRegexPatches_v2133_native(sourceBuf) {
-  if (!Buffer.isBuffer(sourceBuf)) {
-    throw new Error('applyRegexPatches_v2133_native expected a Buffer');
-  }
-
-  let text = sourceBuf.toString('latin1');
-  const steps = [];
-
-  {
-    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v2133.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      gateRe,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.33 redacted_thinking call site gate (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) {
-      steps.push(`v2.1.33 redacted_thinking call site gate (native regex) x${replacedCount}`);
-    }
-  }
-
-  {
-    const visRe = new RegExp(thinkingVisibilityRegex_v2133.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      visRe,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.33 thinking visibility (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) steps.push(`v2.1.33 thinking visibility (native regex) x${replacedCount}`);
-  }
-
-  const outBuf = Buffer.from(text, 'latin1');
-  if (outBuf.length !== sourceBuf.length) {
-    throw new Error(
-      `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
-    );
-  }
-  return { out: outBuf, steps };
-}
-
-// Regex-based fallback for v2.1.34 (same structural patterns as 2.1.30/2.1.31/2.1.32/2.1.33).
-// NOTE: The caller gates this on `content.includes('VERSION:"2.1.34"')`.
 const redactedThinkingCallsiteGateRegex_v2134 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v2134 = thinkingVisibilityRegex_v2130;
 
-function applyRegexPatches_v2134(source) {
+function applyJsRegexPatchRules(source, rules) {
   let out = source;
   const steps = [];
 
-  if (redactedThinkingCallsiteGateRegex_v2134.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      redactedThinkingCallsiteGateRegex_v2134,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.34 redacted_thinking call site gate (regex)'
-    );
-    steps.push('v2.1.34 redacted_thinking call site gate (regex)');
-  }
-
-  if (thinkingVisibilityRegex_v2134.test(out)) {
-    out = replaceRegexPreserveLength(
-      out,
-      thinkingVisibilityRegex_v2134,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.34 thinking visibility (regex)'
-    );
-    steps.push('v2.1.34 thinking visibility (regex)');
+  for (const rule of rules) {
+    const detectRegex = new RegExp(rule.regex.source, rule.regex.flags.replace(/g/g, ''));
+    if (!detectRegex.test(out)) continue;
+    out = replaceRegexPreserveLength(out, rule.regex, rule.replacer, rule.label);
+    steps.push(rule.step);
   }
 
   return { out, steps };
 }
 
-function applyRegexPatches_v2134_native(sourceBuf) {
+function applyNativeRegexPatchRules(sourceBuf, fnName, rules) {
   if (!Buffer.isBuffer(sourceBuf)) {
-    throw new Error('applyRegexPatches_v2134_native expected a Buffer');
+    throw new Error(`${fnName} expected a Buffer`);
   }
 
   let text = sourceBuf.toString('latin1');
   const steps = [];
 
-  {
-    const gateRe = new RegExp(redactedThinkingCallsiteGateRegex_v2134.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      gateRe,
-      (_m, casePrefix) => `${casePrefix}`,
-      'v2.1.34 redacted_thinking call site gate (native regex)'
-    );
+  for (const rule of rules) {
+    const flags = rule.regex.flags.includes('g') ? rule.regex.flags : `${rule.regex.flags}g`;
+    const regex = new RegExp(rule.regex.source, flags);
+    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(text, regex, rule.replacer, rule.label);
     text = out;
     if (replacedCount > 0) {
-      steps.push(`v2.1.34 redacted_thinking call site gate (native regex) x${replacedCount}`);
+      steps.push(`${rule.step} x${replacedCount}`);
     }
-  }
-
-  {
-    const visRe = new RegExp(thinkingVisibilityRegex_v2134.source, 'g');
-    const { out, replacedCount } = replaceRegexPreserveLengthNativeString(
-      text,
-      visRe,
-      (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
-        `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`,
-      'v2.1.34 thinking visibility (native regex)'
-    );
-    text = out;
-    if (replacedCount > 0) steps.push(`v2.1.34 thinking visibility (native regex) x${replacedCount}`);
   }
 
   const outBuf = Buffer.from(text, 'latin1');
@@ -1905,14 +1200,1004 @@ function applyRegexPatches_v2134_native(sourceBuf) {
       `Refusing to patch native/binary: size changed (${sourceBuf.length} -> ${outBuf.length}).`
     );
   }
+
   return { out: outBuf, steps };
 }
+
+function buildThinkingVisibilityRegexPatchPair(version, gateRegex, thinkingRegex, thinkingReplacer, nativeFnName) {
+  const versionLabel = `v${version}`;
+  const stripRedactedGateReplacer = (_m, casePrefix) => `${casePrefix}`;
+
+  const jsRules = [
+    {
+      regex: gateRegex,
+      replacer: stripRedactedGateReplacer,
+      label: `${versionLabel} redacted_thinking call site gate (regex)`,
+      step: `${versionLabel} redacted_thinking call site gate (regex)`,
+    },
+    {
+      regex: thinkingRegex,
+      replacer: thinkingReplacer,
+      label: `${versionLabel} thinking visibility (regex)`,
+      step: `${versionLabel} thinking visibility (regex)`,
+    },
+  ];
+
+  const nativeRules = [
+    {
+      regex: gateRegex,
+      replacer: stripRedactedGateReplacer,
+      label: `${versionLabel} redacted_thinking call site gate (native regex)`,
+      step: `${versionLabel} redacted_thinking call site gate (native regex)`,
+    },
+    {
+      regex: thinkingRegex,
+      replacer: thinkingReplacer,
+      label: `${versionLabel} thinking visibility (native regex)`,
+      step: `${versionLabel} thinking visibility (native regex)`,
+    },
+  ];
+
+  return {
+    jsFn: source => applyJsRegexPatchRules(source, jsRules),
+    nativeFn: sourceBuf => applyNativeRegexPatchRules(sourceBuf, nativeFnName, nativeRules),
+  };
+}
+
+const thinkingVisibilityReplacer_withVerbose =
+  (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, verboseKey, verboseVar, hideKey, _oldHideValue, suffix) =>
+    `${casePrefix}${createPrefix}!0${verboseKey}${verboseVar}${hideKey}!1${suffix}`;
+
+const thinkingVisibilityReplacer_withoutVerbose =
+  (_m, casePrefix, _gate, createPrefix, _oldIsTranscriptMode, hideKey, _oldHideValue, suffix) =>
+    `${casePrefix}${createPrefix}!0${hideKey}!1${suffix}`;
+
+const { jsFn: applyRegexPatches_v21120, nativeFn: applyRegexPatches_v21120_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.20',
+    redactedThinkingCallsiteGateRegex_v21120,
+    thinkingVisibilityRegex_v21120,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v21120_native'
+  );
+
+const { jsFn: applyRegexPatches_v21122, nativeFn: applyRegexPatches_v21122_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.22',
+    redactedThinkingCallsiteGateRegex_v21122,
+    thinkingVisibilityRegex_v21122,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v21122_native'
+  );
+
+const { jsFn: applyRegexPatches_v21123, nativeFn: applyRegexPatches_v21123_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.23',
+    redactedThinkingCallsiteGateRegex_v21123,
+    thinkingVisibilityRegex_v21123,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v21123_native'
+  );
+
+const { jsFn: applyRegexPatches_v21127, nativeFn: applyRegexPatches_v21127_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.27',
+    redactedThinkingCallsiteGateRegex_v21127,
+    thinkingVisibilityRegex_v21127,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v21127_native'
+  );
+
+const { jsFn: applyRegexPatches_v2130, nativeFn: applyRegexPatches_v2130_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.30',
+    redactedThinkingCallsiteGateRegex_v2130,
+    thinkingVisibilityRegex_v2130,
+    thinkingVisibilityReplacer_withoutVerbose,
+    'applyRegexPatches_v2130_native'
+  );
+
+const { jsFn: applyRegexPatches_v2131, nativeFn: applyRegexPatches_v2131_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.31',
+    redactedThinkingCallsiteGateRegex_v2131,
+    thinkingVisibilityRegex_v2131,
+    thinkingVisibilityReplacer_withoutVerbose,
+    'applyRegexPatches_v2131_native'
+  );
+
+const { jsFn: applyRegexPatches_v2132, nativeFn: applyRegexPatches_v2132_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.32',
+    redactedThinkingCallsiteGateRegex_v2132,
+    thinkingVisibilityRegex_v2132,
+    thinkingVisibilityReplacer_withoutVerbose,
+    'applyRegexPatches_v2132_native'
+  );
+
+const { jsFn: applyRegexPatches_v2133, nativeFn: applyRegexPatches_v2133_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.33',
+    redactedThinkingCallsiteGateRegex_v2133,
+    thinkingVisibilityRegex_v2133,
+    thinkingVisibilityReplacer_withoutVerbose,
+    'applyRegexPatches_v2133_native'
+  );
+
+const { jsFn: applyRegexPatches_v2134, nativeFn: applyRegexPatches_v2134_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.34',
+    redactedThinkingCallsiteGateRegex_v2134,
+    thinkingVisibilityRegex_v2134,
+    thinkingVisibilityReplacer_withoutVerbose,
+    'applyRegexPatches_v2134_native'
+  );
+
 
 let patch1Applied = false;
 let patch2Applied = false;
 let patch1AlreadyApplied = false;
 let patch2AlreadyApplied = false;
 const patch2PlannedSteps = [];
+
+const regexPatchRegistry = [
+  { version: '2.1.14', js: applyRegexPatches_v21114 },
+  { version: '2.1.15', js: applyRegexPatches_v21115 },
+  { version: '2.1.17', js: applyRegexPatches_v21117 },
+  { version: '2.1.19', js: applyRegexPatches_v21119 },
+  { version: '2.1.20', js: applyRegexPatches_v21120, native: applyRegexPatches_v21120_native },
+  { version: '2.1.22', js: applyRegexPatches_v21122, native: applyRegexPatches_v21122_native },
+  { version: '2.1.23', js: applyRegexPatches_v21123, native: applyRegexPatches_v21123_native },
+  {
+    version: '2.1.27',
+    js: applyRegexPatches_v21127,
+    native: applyRegexPatches_v21127_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.30',
+    js: applyRegexPatches_v2130,
+    native: applyRegexPatches_v2130_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.31',
+    js: applyRegexPatches_v2131,
+    native: applyRegexPatches_v2131_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.32',
+    js: applyRegexPatches_v2132,
+    native: applyRegexPatches_v2132_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.33',
+    js: applyRegexPatches_v2133,
+    native: applyRegexPatches_v2133_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.34',
+    js: applyRegexPatches_v2134,
+    native: applyRegexPatches_v2134_native,
+    jsStandaloneDetect: true,
+  },
+];
+
+const jsRegexVersionPatches = regexPatchRegistry.map(({ version, js }) => ({ version, fn: js }));
+
+const nativeRegexVersionPatches = regexPatchRegistry
+  .filter(({ native }) => typeof native === 'function')
+  .map(({ version, native }) => ({ version, fn: native }));
+
+const jsRegexDetectCache = new Map();
+function getJsRegexDetectSteps(version, applyFn) {
+  if (isNativeBinary || !content.includes(`VERSION:"${version}"`)) return [];
+  if (!jsRegexDetectCache.has(version)) {
+    jsRegexDetectCache.set(version, applyFn(content).steps);
+  }
+  return jsRegexDetectCache.get(version);
+}
+
+const jsRegexStandaloneDetectVersions = new Set(
+  regexPatchRegistry.filter(({ jsStandaloneDetect }) => jsStandaloneDetect).map(({ version }) => version)
+);
+
+const standaloneJsRegexVersionPatches = jsRegexVersionPatches.filter(({ version }) =>
+  jsRegexStandaloneDetectVersions.has(version)
+);
+
+function markPatch2Detected(step) {
+  patch2Applied = true;
+  patch2PlannedSteps.push(step);
+}
+
+function markPatch2DetectedSteps(steps) {
+  if (!Array.isArray(steps) || steps.length === 0) return;
+  patch2Applied = true;
+  patch2PlannedSteps.push(...steps);
+}
+
+function detectExactPatchState(searchPattern, replacementPattern, plannedStep, alreadyLabel) {
+  if (content.includes(searchPattern)) {
+    markPatch2Detected(plannedStep);
+    return 'found';
+  }
+  if (content.includes(replacementPattern)) {
+    console.log(`  ⚠️  Already applied (${alreadyLabel})`);
+    return 'already';
+  }
+  return 'none';
+}
+
+function detectAnyExactPatchState(searchPatterns, replacementPattern, plannedStep, alreadyLabel) {
+  if (searchPatterns.some(searchPattern => content.includes(searchPattern))) {
+    markPatch2Detected(plannedStep);
+    return 'found';
+  }
+  if (content.includes(replacementPattern)) {
+    console.log(`  ⚠️  Already applied (${alreadyLabel})`);
+    return 'already';
+  }
+  return 'none';
+}
+
+function applyExactPatch(searchPattern, replacementPattern, replaceLabel, successMessage) {
+  if (!content.includes(searchPattern)) return;
+  content = replaceOnceExact(content, searchPattern, replacementPattern, replaceLabel);
+  console.log(successMessage);
+}
+
+function applyAnyExactPatch(searchPatterns, replacementPattern, replaceLabels, successMessage) {
+  searchPatterns.forEach((searchPattern, idx) => {
+    if (!content.includes(searchPattern)) return;
+    const replaceLabel = Array.isArray(replaceLabels)
+      ? replaceLabels[Math.min(idx, replaceLabels.length - 1)]
+      : replaceLabels;
+    content = replaceOnceExact(content, searchPattern, replacementPattern, replaceLabel);
+    console.log(successMessage);
+  });
+}
+
+function hasVersionTag(version) {
+  return content.includes(`VERSION:"${version}"`);
+}
+
+function detectJsRegexStep(version, applyFn, regexStepNames, plannedStep) {
+  if (isNativeBinary || !hasVersionTag(version)) return;
+  const steps = getJsRegexDetectSteps(version, applyFn);
+  if (regexStepNames.some(stepName => steps.includes(stepName))) {
+    markPatch2Detected(plannedStep);
+  }
+}
+
+const legacyExactPatchRules = [
+  {
+    kind: 'exact',
+    searchPattern: thinkingSearchPattern_v2062,
+    replacementPattern: thinkingReplacement_v2062,
+    plannedStep: 'v2.0.62 call site',
+    alreadyLabel: 'v2.0.62 call site',
+    replaceLabel: 'v2.0.62 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.0.62 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v2074,
+    replacementPattern: redactedThinkingCallsiteReplacement_v2074,
+    plannedStep: 'v2.0.74 redacted_thinking call site',
+    alreadyLabel: 'v2.0.74 redacted_thinking call site',
+    replaceLabel: 'v2.0.74 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.0.74 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v2074,
+    replacementPattern: thinkingCallsiteReplacement_v2074,
+    plannedStep: 'v2.0.74 thinking call site',
+    alreadyLabel: 'v2.0.74 thinking call site',
+    replaceLabel: 'v2.0.74 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.0.74 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v2074_variantCollapsedBanner, thinkingRendererSearchPattern_v2074_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v2074,
+    plannedStep: 'v2.0.74 thinking renderer',
+    alreadyLabel: 'v2.0.74 thinking renderer',
+    replaceLabels: ['v2.0.74 thinking renderer (collapsed banner)', 'v2.0.74 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.0.74 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v2076,
+    replacementPattern: redactedThinkingCallsiteReplacement_v2076,
+    plannedStep: 'v2.0.76 redacted_thinking call site',
+    alreadyLabel: 'v2.0.76 redacted_thinking call site',
+    replaceLabel: 'v2.0.76 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.0.76 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v2076,
+    replacementPattern: thinkingCallsiteReplacement_v2076,
+    plannedStep: 'v2.0.76 thinking call site',
+    alreadyLabel: 'v2.0.76 thinking call site',
+    replaceLabel: 'v2.0.76 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.0.76 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v2076_variantCollapsedBanner, thinkingRendererSearchPattern_v2076_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v2076,
+    plannedStep: 'v2.0.76 thinking renderer',
+    alreadyLabel: 'v2.0.76 thinking renderer',
+    replaceLabels: ['v2.0.76 thinking renderer (collapsed banner)', 'v2.0.76 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.0.76 thinking renderer)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v2071_variantCollapsedBanner, thinkingRendererSearchPattern_v2071_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v2071,
+    plannedStep: 'v2.0.71 thinking renderer',
+    alreadyLabel: 'v2.0.71 thinking renderer',
+    replaceLabels: ['v2.0.71 thinking renderer (collapsed banner)', 'v2.0.71 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.0.71 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v2111,
+    replacementPattern: redactedThinkingCallsiteReplacement_v2111,
+    plannedStep: 'v2.1.1 redacted_thinking call site',
+    alreadyLabel: 'v2.1.1 redacted_thinking call site',
+    replaceLabel: 'v2.1.1 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.1 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v2111,
+    replacementPattern: thinkingCallsiteReplacement_v2111,
+    plannedStep: 'v2.1.1 thinking call site',
+    alreadyLabel: 'v2.1.1 thinking call site',
+    replaceLabel: 'v2.1.1 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.1 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v2111_variantCollapsedBanner, thinkingRendererSearchPattern_v2111_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v2111,
+    plannedStep: 'v2.1.1 thinking renderer',
+    alreadyLabel: 'v2.1.1 thinking renderer',
+    replaceLabels: ['v2.1.1 thinking renderer (collapsed banner)', 'v2.1.1 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.1 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v212,
+    replacementPattern: redactedThinkingCallsiteReplacement_v212,
+    plannedStep: 'v2.1.2 redacted_thinking call site',
+    alreadyLabel: 'v2.1.2 redacted_thinking call site',
+    replaceLabel: 'v2.1.2 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.2 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v212,
+    replacementPattern: thinkingCallsiteReplacement_v212,
+    plannedStep: 'v2.1.2 thinking call site',
+    alreadyLabel: 'v2.1.2 thinking call site',
+    replaceLabel: 'v2.1.2 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.2 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v212_variantCollapsedBanner, thinkingRendererSearchPattern_v212_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v212,
+    plannedStep: 'v2.1.2 thinking renderer',
+    alreadyLabel: 'v2.1.2 thinking renderer',
+    replaceLabels: ['v2.1.2 thinking renderer (collapsed banner)', 'v2.1.2 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.2 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v213,
+    replacementPattern: redactedThinkingCallsiteReplacement_v213,
+    plannedStep: 'v2.1.3 redacted_thinking call site',
+    alreadyLabel: 'v2.1.3 redacted_thinking call site',
+    replaceLabel: 'v2.1.3 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.3 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v213,
+    replacementPattern: thinkingCallsiteReplacement_v213,
+    plannedStep: 'v2.1.3 thinking call site',
+    alreadyLabel: 'v2.1.3 thinking call site',
+    replaceLabel: 'v2.1.3 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.3 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v213_variantCollapsedBanner, thinkingRendererSearchPattern_v213_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v213,
+    plannedStep: 'v2.1.3 thinking renderer',
+    alreadyLabel: 'v2.1.3 thinking renderer',
+    replaceLabels: ['v2.1.3 thinking renderer (collapsed banner)', 'v2.1.3 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.3 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v214,
+    replacementPattern: redactedThinkingCallsiteReplacement_v214,
+    plannedStep: 'v2.1.4 redacted_thinking call site',
+    alreadyLabel: 'v2.1.4 redacted_thinking call site',
+    replaceLabel: 'v2.1.4 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.4 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v214_variantCollapsedBanner, thinkingRendererSearchPattern_v214_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v214,
+    plannedStep: 'v2.1.4 thinking renderer',
+    alreadyLabel: 'v2.1.4 thinking renderer',
+    replaceLabels: ['v2.1.4 thinking renderer (collapsed banner)', 'v2.1.4 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.4 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v216,
+    replacementPattern: redactedThinkingCallsiteReplacement_v216,
+    plannedStep: 'v2.1.6 redacted_thinking call site',
+    alreadyLabel: 'v2.1.6 redacted_thinking call site',
+    replaceLabel: 'v2.1.6 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.6 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v216,
+    replacementPattern: thinkingCallsiteReplacement_v216,
+    plannedStep: 'v2.1.6 thinking call site',
+    alreadyLabel: 'v2.1.6 thinking call site',
+    replaceLabel: 'v2.1.6 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.6 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v216_variantCollapsedBanner, thinkingRendererSearchPattern_v216_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v216,
+    plannedStep: 'v2.1.6 thinking renderer',
+    alreadyLabel: 'v2.1.6 thinking renderer',
+    replaceLabels: ['v2.1.6 thinking renderer (collapsed banner)', 'v2.1.6 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.6 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v217,
+    replacementPattern: redactedThinkingCallsiteReplacement_v217,
+    plannedStep: 'v2.1.7 redacted_thinking call site',
+    alreadyLabel: 'v2.1.7 redacted_thinking call site',
+    replaceLabel: 'v2.1.7 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.7 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v217,
+    replacementPattern: thinkingCallsiteReplacement_v217,
+    plannedStep: 'v2.1.7 thinking call site',
+    alreadyLabel: 'v2.1.7 thinking call site',
+    replaceLabel: 'v2.1.7 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.7 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v217_variantCollapsedBanner, thinkingRendererSearchPattern_v217_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v217,
+    plannedStep: 'v2.1.7 thinking renderer',
+    alreadyLabel: 'v2.1.7 thinking renderer',
+    replaceLabels: ['v2.1.7 thinking renderer (collapsed banner)', 'v2.1.7 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.7 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v219,
+    replacementPattern: redactedThinkingCallsiteReplacement_v219,
+    plannedStep: 'v2.1.9 redacted_thinking call site',
+    alreadyLabel: 'v2.1.9 redacted_thinking call site',
+    replaceLabel: 'v2.1.9 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.9 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v219,
+    replacementPattern: thinkingCallsiteReplacement_v219,
+    plannedStep: 'v2.1.9 thinking call site',
+    alreadyLabel: 'v2.1.9 thinking call site',
+    replaceLabel: 'v2.1.9 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.9 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v219_variantCollapsedBanner, thinkingRendererSearchPattern_v219_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v219,
+    plannedStep: 'v2.1.9 thinking renderer',
+    alreadyLabel: 'v2.1.9 thinking renderer',
+    replaceLabels: ['v2.1.9 thinking renderer (collapsed banner)', 'v2.1.9 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.9 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v21111,
+    replacementPattern: redactedThinkingCallsiteReplacement_v21111,
+    plannedStep: 'v2.1.11 redacted_thinking call site',
+    alreadyLabel: 'v2.1.11 redacted_thinking call site',
+    replaceLabel: 'v2.1.11 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.11 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v21111,
+    replacementPattern: thinkingCallsiteReplacement_v21111,
+    plannedStep: 'v2.1.11 thinking call site',
+    alreadyLabel: 'v2.1.11 thinking call site',
+    replaceLabel: 'v2.1.11 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.11 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v21111_variantCollapsedBanner, thinkingRendererSearchPattern_v21111_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v21111,
+    plannedStep: 'v2.1.11 thinking renderer',
+    alreadyLabel: 'v2.1.11 thinking renderer',
+    replaceLabels: ['v2.1.11 thinking renderer (collapsed banner)', 'v2.1.11 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.11 thinking renderer)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: redactedThinkingCallsiteSearchPattern_v21112,
+    replacementPattern: redactedThinkingCallsiteReplacement_v21112,
+    plannedStep: 'v2.1.12 redacted_thinking call site',
+    alreadyLabel: 'v2.1.12 redacted_thinking call site',
+    replaceLabel: 'v2.1.12 redacted_thinking call site',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.12 call site)',
+  },
+  {
+    kind: 'exact',
+    searchPattern: thinkingCallsiteSearchPattern_v21112,
+    replacementPattern: thinkingCallsiteReplacement_v21112,
+    plannedStep: 'v2.1.12 thinking call site',
+    alreadyLabel: 'v2.1.12 thinking call site',
+    replaceLabel: 'v2.1.12 thinking call site',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.12 call site)',
+  },
+  {
+    kind: 'any',
+    searchPatterns: [thinkingRendererSearchPattern_v21112_variantCollapsedBanner, thinkingRendererSearchPattern_v21112_variantNullGate],
+    replacementPattern: thinkingRendererReplacement_v21112,
+    plannedStep: 'v2.1.12 thinking renderer',
+    alreadyLabel: 'v2.1.12 thinking renderer',
+    replaceLabels: ['v2.1.12 thinking renderer (collapsed banner)', 'v2.1.12 thinking renderer (null gate)'],
+    successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.12 thinking renderer)',
+  },
+];
+
+function detectLegacyExactPatchRule(rule) {
+  if (rule.kind === 'any') {
+    detectAnyExactPatchState(rule.searchPatterns, rule.replacementPattern, rule.plannedStep, rule.alreadyLabel);
+    return;
+  }
+
+  detectExactPatchState(rule.searchPattern, rule.replacementPattern, rule.plannedStep, rule.alreadyLabel);
+}
+
+function applyLegacyExactPatchRule(rule) {
+  if (rule.kind === 'any') {
+    applyAnyExactPatch(rule.searchPatterns, rule.replacementPattern, rule.replaceLabels, rule.successMessage);
+    return;
+  }
+
+  applyExactPatch(rule.searchPattern, rule.replacementPattern, rule.replaceLabel, rule.successMessage);
+}
+
+const jsHybridPatchRules = [
+  {
+    version: '2.1.14',
+    regexFn: applyRegexPatches_v21114,
+    detectEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21114,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21114,
+        plannedStep: 'v2.1.14 redacted_thinking call site',
+        alreadyLabel: 'v2.1.14 redacted_thinking call site',
+        regexStepNames: ['v2.1.14 redacted_thinking call site (regex)'],
+        regexPlannedStep: 'v2.1.14 redacted_thinking call site (regex)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21114,
+        replacementPattern: thinkingCallsiteReplacement_v21114,
+        plannedStep: 'v2.1.14 thinking call site',
+        alreadyLabel: 'v2.1.14 thinking call site',
+        regexStepNames: ['v2.1.14 thinking call site (regex)'],
+        regexPlannedStep: 'v2.1.14 thinking call site (regex)',
+      },
+      {
+        kind: 'any',
+        searchPatterns: [
+          thinkingRendererSearchPattern_v21114_variantCollapsedBanner,
+          thinkingRendererSearchPattern_v21114_variantNullGate,
+        ],
+        replacementPattern: thinkingRendererReplacement_v21114,
+        plannedStep: 'v2.1.14 thinking renderer',
+        alreadyLabel: 'v2.1.14 thinking renderer',
+      },
+    ],
+    applyEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21114,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21114,
+        replaceLabel: 'v2.1.14 redacted_thinking call site',
+        successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.14 call site)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21114,
+        replacementPattern: thinkingCallsiteReplacement_v21114,
+        replaceLabel: 'v2.1.14 thinking call site',
+        successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.14 call site)',
+      },
+      {
+        kind: 'any',
+        searchPatterns: [
+          thinkingRendererSearchPattern_v21114_variantCollapsedBanner,
+          thinkingRendererSearchPattern_v21114_variantNullGate,
+        ],
+        replacementPattern: thinkingRendererReplacement_v21114,
+        replaceLabels: ['v2.1.14 thinking renderer (collapsed banner)', 'v2.1.14 thinking renderer (null gate)'],
+        successMessage: '✅ Patch 2 applied: thinking content forced visible (v2.1.14 thinking renderer)',
+      },
+    ],
+  },
+  {
+    version: '2.1.15',
+    regexFn: applyRegexPatches_v21115,
+    detectEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21115,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21115,
+        plannedStep: 'v2.1.15 redacted_thinking call site',
+        alreadyLabel: 'v2.1.15 redacted_thinking call site',
+        regexStepNames: ['v2.1.15 redacted_thinking call site gate (regex)'],
+        regexPlannedStep: 'v2.1.15 redacted_thinking call site (regex)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21115,
+        replacementPattern: thinkingCallsiteReplacement_v21115,
+        plannedStep: 'v2.1.15 thinking call site',
+        alreadyLabel: 'v2.1.15 thinking call site',
+        regexStepNames: ['v2.1.15 thinking call site gate (regex)', 'v2.1.15 thinking call site args (regex)'],
+        regexPlannedStep: 'v2.1.15 thinking call site (regex)',
+      },
+    ],
+    applyEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21115,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21115,
+        replaceLabel: 'v2.1.15 redacted_thinking call site',
+        successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.15 call site)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21115,
+        replacementPattern: thinkingCallsiteReplacement_v21115,
+        replaceLabel: 'v2.1.15 thinking call site',
+        successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.15 call site)',
+      },
+    ],
+  },
+  {
+    version: '2.1.17',
+    regexFn: applyRegexPatches_v21117,
+    detectEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21117,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21117,
+        plannedStep: 'v2.1.17 redacted_thinking call site',
+        alreadyLabel: 'v2.1.17 redacted_thinking call site',
+        regexStepNames: ['v2.1.17 redacted_thinking call site gate (regex)'],
+        regexPlannedStep: 'v2.1.17 redacted_thinking call site (regex)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21117,
+        replacementPattern: thinkingCallsiteReplacement_v21117,
+        plannedStep: 'v2.1.17 thinking call site',
+        alreadyLabel: 'v2.1.17 thinking call site',
+        regexStepNames: ['v2.1.17 thinking call site gate (regex)', 'v2.1.17 thinking call site args (regex)'],
+        regexPlannedStep: 'v2.1.17 thinking call site (regex)',
+      },
+    ],
+    applyEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21117,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21117,
+        replaceLabel: 'v2.1.17 redacted_thinking call site',
+        successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.17 call site)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21117,
+        replacementPattern: thinkingCallsiteReplacement_v21117,
+        replaceLabel: 'v2.1.17 thinking call site',
+        successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.17 call site)',
+      },
+    ],
+  },
+  {
+    version: '2.1.19',
+    regexFn: applyRegexPatches_v21119,
+    detectEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21119,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21119,
+        plannedStep: 'v2.1.19 redacted_thinking call site',
+        alreadyLabel: 'v2.1.19 redacted_thinking call site',
+        regexStepNames: ['v2.1.19 redacted_thinking call site gate (regex)'],
+        regexPlannedStep: 'v2.1.19 redacted_thinking call site (regex)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21119,
+        replacementPattern: thinkingCallsiteReplacement_v21119,
+        plannedStep: 'v2.1.19 thinking call site',
+        alreadyLabel: 'v2.1.19 thinking call site',
+        regexStepNames: ['v2.1.19 thinking call site gate (regex)', 'v2.1.19 thinking call site args (regex)'],
+        regexPlannedStep: 'v2.1.19 thinking call site (regex)',
+      },
+    ],
+    applyEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21119,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21119,
+        replaceLabel: 'v2.1.19 redacted_thinking call site',
+        successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.19 call site)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21119,
+        replacementPattern: thinkingCallsiteReplacement_v21119,
+        replaceLabel: 'v2.1.19 thinking call site',
+        successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.19 call site)',
+      },
+    ],
+  },
+  {
+    version: '2.1.20',
+    regexFn: applyRegexPatches_v21120,
+    detectEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21120,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21120,
+        plannedStep: 'v2.1.20 redacted_thinking call site',
+        alreadyLabel: 'v2.1.20 redacted_thinking call site',
+        regexStepNames: ['v2.1.20 redacted_thinking call site gate (regex)'],
+        regexPlannedStep: 'v2.1.20 redacted_thinking call site (regex)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21120,
+        replacementPattern: thinkingCallsiteReplacement_v21120,
+        plannedStep: 'v2.1.20 thinking call site',
+        alreadyLabel: 'v2.1.20 thinking call site',
+        regexStepNames: ['v2.1.20 thinking visibility (regex)'],
+        regexPlannedStep: 'v2.1.20 thinking visibility (regex)',
+      },
+    ],
+    applyEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21120,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21120,
+        replaceLabel: 'v2.1.20 redacted_thinking call site',
+        successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.20 call site)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21120,
+        replacementPattern: thinkingCallsiteReplacement_v21120,
+        replaceLabel: 'v2.1.20 thinking call site',
+        successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.20 call site)',
+      },
+    ],
+  },
+  {
+    version: '2.1.22',
+    regexFn: applyRegexPatches_v21122,
+    detectEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21122,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21122,
+        plannedStep: 'v2.1.22 redacted_thinking call site',
+        alreadyLabel: 'v2.1.22 redacted_thinking call site',
+        regexStepNames: ['v2.1.22 redacted_thinking call site gate (regex)'],
+        regexPlannedStep: 'v2.1.22 redacted_thinking call site (regex)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21122,
+        replacementPattern: thinkingCallsiteReplacement_v21122,
+        plannedStep: 'v2.1.22 thinking call site',
+        alreadyLabel: 'v2.1.22 thinking call site',
+        regexStepNames: ['v2.1.22 thinking visibility (regex)'],
+        regexPlannedStep: 'v2.1.22 thinking visibility (regex)',
+      },
+    ],
+    applyEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21122,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21122,
+        replaceLabel: 'v2.1.22 redacted_thinking call site',
+        successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.22 call site)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21122,
+        replacementPattern: thinkingCallsiteReplacement_v21122,
+        replaceLabel: 'v2.1.22 thinking call site',
+        successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.22 call site)',
+      },
+    ],
+  },
+  {
+    version: '2.1.23',
+    regexFn: applyRegexPatches_v21123,
+    detectEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21123,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21123,
+        plannedStep: 'v2.1.23 redacted_thinking call site',
+        alreadyLabel: 'v2.1.23 redacted_thinking call site',
+        regexStepNames: ['v2.1.23 redacted_thinking call site gate (regex)'],
+        regexPlannedStep: 'v2.1.23 redacted_thinking call site (regex)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21123,
+        replacementPattern: thinkingCallsiteReplacement_v21123,
+        plannedStep: 'v2.1.23 thinking call site',
+        alreadyLabel: 'v2.1.23 thinking call site',
+        regexStepNames: ['v2.1.23 thinking visibility (regex)'],
+        regexPlannedStep: 'v2.1.23 thinking visibility (regex)',
+      },
+    ],
+    applyEntries: [
+      {
+        kind: 'exact',
+        searchPattern: redactedThinkingCallsiteSearchPattern_v21123,
+        replacementPattern: redactedThinkingCallsiteReplacement_v21123,
+        replaceLabel: 'v2.1.23 redacted_thinking call site',
+        successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.23 call site)',
+      },
+      {
+        kind: 'exact',
+        searchPattern: thinkingCallsiteSearchPattern_v21123,
+        replacementPattern: thinkingCallsiteReplacement_v21123,
+        replaceLabel: 'v2.1.23 thinking call site',
+        successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.23 call site)',
+      },
+    ],
+  },
+];
+
+function detectJsHybridPatchRule(rule) {
+  for (const entry of rule.detectEntries) {
+    if (entry.kind === 'any') {
+      detectAnyExactPatchState(entry.searchPatterns, entry.replacementPattern, entry.plannedStep, entry.alreadyLabel);
+      continue;
+    }
+
+    const state = detectExactPatchState(
+      entry.searchPattern,
+      entry.replacementPattern,
+      entry.plannedStep,
+      entry.alreadyLabel
+    );
+    if (state !== 'none' || !entry.regexStepNames || !entry.regexPlannedStep) continue;
+
+    detectJsRegexStep(rule.version, rule.regexFn, entry.regexStepNames, entry.regexPlannedStep);
+  }
+}
+
+function applyJsHybridPatchRule(rule) {
+  for (const entry of rule.applyEntries) {
+    if (entry.kind === 'any') {
+      applyAnyExactPatch(entry.searchPatterns, entry.replacementPattern, entry.replaceLabels, entry.successMessage);
+      continue;
+    }
+
+    applyExactPatch(entry.searchPattern, entry.replacementPattern, entry.replaceLabel, entry.successMessage);
+  }
+
+  applyJsRegexFallback(rule.version, rule.regexFn);
+}
+
+function detectStandaloneJsRegexPatches() {
+  if (isNativeBinary) return;
+  for (const { version, fn } of standaloneJsRegexVersionPatches) {
+    const steps = getJsRegexDetectSteps(version, fn);
+    markPatch2DetectedSteps(steps);
+  }
+}
+
+function applyStandaloneJsRegexPatches() {
+  for (const { version, fn } of standaloneJsRegexVersionPatches) {
+    applyJsRegexFallback(version, fn);
+  }
+}
+
+const nativeExactPatchRules = [
+  {
+    searchPattern: redactedThinkingCallsiteSearchPattern_v21117_native,
+    replacementPattern: redactedThinkingCallsiteReplacement_v21117_native,
+    plannedStep: 'v2.1.17 redacted_thinking call site (native)',
+    alreadyLabel: 'v2.1.17 redacted_thinking call site (native)',
+    replaceLabel: 'v2.1.17 redacted_thinking call site (native)',
+    successMessage: '✅ Patch 2 applied: redacted_thinking forced visible (v2.1.17 native call site)',
+  },
+  {
+    searchPattern: thinkingCallsiteSearchPattern_v21117_native,
+    replacementPattern: thinkingCallsiteReplacement_v21117_native,
+    plannedStep: 'v2.1.17 thinking call site (native)',
+    alreadyLabel: 'v2.1.17 thinking call site (native)',
+    replaceLabel: 'v2.1.17 thinking call site (native)',
+    successMessage: '✅ Patch 2 applied: thinking forced visible (v2.1.17 native call site)',
+  },
+];
+
+function collectReplacementPatternsFromEntries(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries
+    .map(entry => entry?.replacementPattern)
+    .filter(pattern => typeof pattern === 'string' && pattern.length > 0);
+}
+
+const patch2KnownReplacementPatterns = Array.from(
+  new Set([
+    ...collectReplacementPatternsFromEntries(legacyExactPatchRules),
+    ...jsHybridPatchRules.flatMap(rule => collectReplacementPatternsFromEntries(rule.applyEntries)),
+    ...collectReplacementPatternsFromEntries(nativeExactPatchRules),
+  ])
+);
+
+function detectNativeExactPatchRule(rule) {
+  if (!isNativeBinary) return;
+  detectExactPatchState(rule.searchPattern, rule.replacementPattern, rule.plannedStep, rule.alreadyLabel);
+}
+
+function applyNativeExactPatchRule(rule) {
+  while (isNativeBinary && content.includes(rule.searchPattern)) {
+    content = replaceOnceExact(content, rule.searchPattern, rule.replacementPattern, rule.replaceLabel);
+    console.log(rule.successMessage);
+  }
+}
+
+function getMatchedNativeRegexPatch() {
+  return nativeRegexVersionPatches.find(({ version }) => hasVersionTag(version));
+}
 
 // Check if patches can be applied
 console.log('Checking patches...\n');
@@ -1929,634 +2214,29 @@ if (content.includes(bannerSearchPattern_v2062)) {
 }
 
 console.log('\nPatch 2: thinking visibility');
-if (content.includes(thinkingSearchPattern_v2062)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.0.62 call site');
-} else if (content.includes(thinkingReplacement_v2062)) {
-  console.log('  ⚠️  Already applied (v2.0.62 call site)');
+for (const rule of legacyExactPatchRules) {
+  detectLegacyExactPatchRule(rule);
 }
 
-if (content.includes(redactedThinkingCallsiteSearchPattern_v2074)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.0.74 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v2074)) {
-  console.log('  ⚠️  Already applied (v2.0.74 redacted_thinking call site)');
+for (const rule of jsHybridPatchRules) {
+  detectJsHybridPatchRule(rule);
 }
 
-if (content.includes(thinkingCallsiteSearchPattern_v2074)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.0.74 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v2074)) {
-  console.log('  ⚠️  Already applied (v2.0.74 thinking call site)');
-}
+// Version-scoped JS regex detection for versions that only use regex-style matching.
+detectStandaloneJsRegexPatches();
 
-if (
-  content.includes(thinkingRendererSearchPattern_v2074_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v2074_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.0.74 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v2074)) {
-  console.log('  ⚠️  Already applied (v2.0.74 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v2076)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.0.76 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v2076)) {
-  console.log('  ⚠️  Already applied (v2.0.76 redacted_thinking call site)');
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v2076)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.0.76 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v2076)) {
-  console.log('  ⚠️  Already applied (v2.0.76 thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v2076_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v2076_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.0.76 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v2076)) {
-  console.log('  ⚠️  Already applied (v2.0.76 thinking renderer)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v2071_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v2071_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.0.71 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v2071)) {
-  console.log('  ⚠️  Already applied (v2.0.71 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v2111)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.1 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v2111)) {
-  console.log('  ⚠️  Already applied (v2.1.1 redacted_thinking call site)');
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v2111)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.1 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v2111)) {
-  console.log('  ⚠️  Already applied (v2.1.1 thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v2111_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v2111_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.1 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v2111)) {
-  console.log('  ⚠️  Already applied (v2.1.1 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v212)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.2 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v212)) {
-  console.log('  ⚠️  Already applied (v2.1.2 redacted_thinking call site)');
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v212)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.2 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v212)) {
-  console.log('  ⚠️  Already applied (v2.1.2 thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v212_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v212_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.2 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v212)) {
-  console.log('  ⚠️  Already applied (v2.1.2 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v213)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.3 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v213)) {
-  console.log('  ⚠️  Already applied (v2.1.3 redacted_thinking call site)');
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v213)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.3 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v213)) {
-  console.log('  ⚠️  Already applied (v2.1.3 thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v213_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v213_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.3 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v213)) {
-  console.log('  ⚠️  Already applied (v2.1.3 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v214)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.4 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v214)) {
-  console.log('  ⚠️  Already applied (v2.1.4 redacted_thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v214_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v214_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.4 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v214)) {
-  console.log('  ⚠️  Already applied (v2.1.4 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v216)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.6 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v216)) {
-  console.log('  ⚠️  Already applied (v2.1.6 redacted_thinking call site)');
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v216)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.6 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v216)) {
-  console.log('  ⚠️  Already applied (v2.1.6 thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v216_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v216_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.6 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v216)) {
-  console.log('  ⚠️  Already applied (v2.1.6 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v217)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.7 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v217)) {
-  console.log('  ⚠️  Already applied (v2.1.7 redacted_thinking call site)');
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v217)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.7 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v217)) {
-  console.log('  ⚠️  Already applied (v2.1.7 thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v217_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v217_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.7 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v217)) {
-  console.log('  ⚠️  Already applied (v2.1.7 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v219)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.9 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v219)) {
-  console.log('  ⚠️  Already applied (v2.1.9 redacted_thinking call site)');
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v219)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.9 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v219)) {
-  console.log('  ⚠️  Already applied (v2.1.9 thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v219_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v219_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.9 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v219)) {
-  console.log('  ⚠️  Already applied (v2.1.9 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v21111)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.11 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v21111)) {
-  console.log('  ⚠️  Already applied (v2.1.11 redacted_thinking call site)');
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v21111)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.11 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v21111)) {
-  console.log('  ⚠️  Already applied (v2.1.11 thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v21111_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v21111_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.11 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v21111)) {
-  console.log('  ⚠️  Already applied (v2.1.11 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v21112)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.12 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v21112)) {
-  console.log('  ⚠️  Already applied (v2.1.12 redacted_thinking call site)');
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v21112)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.12 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v21112)) {
-  console.log('  ⚠️  Already applied (v2.1.12 thinking call site)');
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v21112_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v21112_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.12 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v21112)) {
-  console.log('  ⚠️  Already applied (v2.1.12 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v21114)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.14 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v21114)) {
-  console.log('  ⚠️  Already applied (v2.1.14 redacted_thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.14"')) {
-  const { steps } = applyRegexPatches_v21114(content);
-  if (steps.includes('v2.1.14 redacted_thinking call site (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.14 redacted_thinking call site (regex)');
-  }
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v21114)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.14 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v21114)) {
-  console.log('  ⚠️  Already applied (v2.1.14 thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.14"')) {
-  const { steps } = applyRegexPatches_v21114(content);
-  if (steps.includes('v2.1.14 thinking call site (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.14 thinking call site (regex)');
-  }
-}
-
-if (
-  content.includes(thinkingRendererSearchPattern_v21114_variantCollapsedBanner) ||
-  content.includes(thinkingRendererSearchPattern_v21114_variantNullGate)
-) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.14 thinking renderer');
-} else if (content.includes(thinkingRendererReplacement_v21114)) {
-  console.log('  ⚠️  Already applied (v2.1.14 thinking renderer)');
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v21115)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.15 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v21115)) {
-  console.log('  ⚠️  Already applied (v2.1.15 redacted_thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.15"')) {
-  const { steps } = applyRegexPatches_v21115(content);
-  if (steps.includes('v2.1.15 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.15 redacted_thinking call site (regex)');
-  }
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v21115)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.15 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v21115)) {
-  console.log('  ⚠️  Already applied (v2.1.15 thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.15"')) {
-  const { steps } = applyRegexPatches_v21115(content);
-  if (
-    steps.includes('v2.1.15 thinking call site gate (regex)') ||
-    steps.includes('v2.1.15 thinking call site args (regex)')
-  ) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.15 thinking call site (regex)');
-  }
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v21117)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.17 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v21117)) {
-  console.log('  ⚠️  Already applied (v2.1.17 redacted_thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.17"')) {
-  const { steps } = applyRegexPatches_v21117(content);
-  if (steps.includes('v2.1.17 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.17 redacted_thinking call site (regex)');
-  }
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v21117)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.17 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v21117)) {
-  console.log('  ⚠️  Already applied (v2.1.17 thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.17"')) {
-  const { steps } = applyRegexPatches_v21117(content);
-  if (
-    steps.includes('v2.1.17 thinking call site gate (regex)') ||
-    steps.includes('v2.1.17 thinking call site args (regex)')
-  ) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.17 thinking call site (regex)');
-  }
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v21119)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.19 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v21119)) {
-  console.log('  ⚠️  Already applied (v2.1.19 redacted_thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.19"')) {
-  const { steps } = applyRegexPatches_v21119(content);
-  if (steps.includes('v2.1.19 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.19 redacted_thinking call site (regex)');
-  }
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v21119)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.19 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v21119)) {
-  console.log('  ⚠️  Already applied (v2.1.19 thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.19"')) {
-  const { steps } = applyRegexPatches_v21119(content);
-  if (
-    steps.includes('v2.1.19 thinking call site gate (regex)') ||
-    steps.includes('v2.1.19 thinking call site args (regex)')
-  ) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.19 thinking call site (regex)');
-  }
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v21120)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.20 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v21120)) {
-  console.log('  ⚠️  Already applied (v2.1.20 redacted_thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.20"')) {
-  const { steps } = applyRegexPatches_v21120(content);
-  if (steps.includes('v2.1.20 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.20 redacted_thinking call site (regex)');
-  }
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v21120)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.20 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v21120)) {
-  console.log('  ⚠️  Already applied (v2.1.20 thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.20"')) {
-  const { steps } = applyRegexPatches_v21120(content);
-  if (
-    steps.includes('v2.1.20 thinking visibility (regex)')
-  ) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.20 thinking visibility (regex)');
-  }
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v21122)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.22 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v21122)) {
-  console.log('  ⚠️  Already applied (v2.1.22 redacted_thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.22"')) {
-  const { steps } = applyRegexPatches_v21122(content);
-  if (steps.includes('v2.1.22 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.22 redacted_thinking call site (regex)');
-  }
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v21122)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.22 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v21122)) {
-  console.log('  ⚠️  Already applied (v2.1.22 thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.22"')) {
-  const { steps } = applyRegexPatches_v21122(content);
-  if (steps.includes('v2.1.22 thinking visibility (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.22 thinking visibility (regex)');
-  }
-}
-
-if (content.includes(redactedThinkingCallsiteSearchPattern_v21123)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.23 redacted_thinking call site');
-} else if (content.includes(redactedThinkingCallsiteReplacement_v21123)) {
-  console.log('  ⚠️  Already applied (v2.1.23 redacted_thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.23"')) {
-  const { steps } = applyRegexPatches_v21123(content);
-  if (steps.includes('v2.1.23 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.23 redacted_thinking call site (regex)');
-  }
-}
-
-if (content.includes(thinkingCallsiteSearchPattern_v21123)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.23 thinking call site');
-} else if (content.includes(thinkingCallsiteReplacement_v21123)) {
-  console.log('  ⚠️  Already applied (v2.1.23 thinking call site)');
-} else if (!isNativeBinary && content.includes('VERSION:"2.1.23"')) {
-  const { steps } = applyRegexPatches_v21123(content);
-  if (steps.includes('v2.1.23 thinking visibility (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.23 thinking visibility (regex)');
-  }
-}
-
-// v2.1.27: identifiers changed again, but the structural regex still matches.
-if (!isNativeBinary && content.includes('VERSION:"2.1.27"')) {
-  const { steps } = applyRegexPatches_v21127(content);
-  if (steps.includes('v2.1.27 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.27 redacted_thinking call site (regex)');
-  }
-  if (steps.includes('v2.1.27 thinking visibility (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.27 thinking visibility (regex)');
-  }
-}
-
-// v2.1.30: call site changed (no `verbose:` prop), so we use a dedicated version-scoped regex.
-if (!isNativeBinary && content.includes('VERSION:"2.1.30"')) {
-  const { steps } = applyRegexPatches_v2130(content);
-  if (steps.includes('v2.1.30 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.30 redacted_thinking call site (regex)');
-  }
-  if (steps.includes('v2.1.30 thinking visibility (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.30 thinking visibility (regex)');
-  }
-}
-
-// v2.1.31: same structural patterns as 2.1.30, but VERSION changed.
-if (!isNativeBinary && content.includes('VERSION:"2.1.31"')) {
-  const { steps } = applyRegexPatches_v2131(content);
-  if (steps.includes('v2.1.31 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.31 redacted_thinking call site (regex)');
-  }
-  if (steps.includes('v2.1.31 thinking visibility (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.31 thinking visibility (regex)');
-  }
-}
-
-// v2.1.32: same structural patterns as 2.1.30/2.1.31, but VERSION changed.
-if (!isNativeBinary && content.includes('VERSION:"2.1.32"')) {
-  const { steps } = applyRegexPatches_v2132(content);
-  if (steps.includes('v2.1.32 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.32 redacted_thinking call site (regex)');
-  }
-  if (steps.includes('v2.1.32 thinking visibility (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.32 thinking visibility (regex)');
-  }
-}
-
-// v2.1.33: same structural patterns as 2.1.30/2.1.31/2.1.32, but VERSION changed.
-if (!isNativeBinary && content.includes('VERSION:"2.1.33"')) {
-  const { steps } = applyRegexPatches_v2133(content);
-  if (steps.includes('v2.1.33 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.33 redacted_thinking call site (regex)');
-  }
-  if (steps.includes('v2.1.33 thinking visibility (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.33 thinking visibility (regex)');
-  }
-}
-
-// v2.1.34: same structural patterns as 2.1.30/2.1.31/2.1.32/2.1.33, but VERSION changed.
-if (!isNativeBinary && content.includes('VERSION:"2.1.34"')) {
-  const { steps } = applyRegexPatches_v2134(content);
-  if (steps.includes('v2.1.34 redacted_thinking call site gate (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.34 redacted_thinking call site (regex)');
-  }
-  if (steps.includes('v2.1.34 thinking visibility (regex)')) {
-    patch2Applied = true;
-    patch2PlannedSteps.push('v2.1.34 thinking visibility (regex)');
-  }
-}
-
-// Native/binary detection for v2.1.17 (exact-string only; regex not supported for native).
-if (isNativeBinary && content.includes(redactedThinkingCallsiteSearchPattern_v21117_native)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.17 redacted_thinking call site (native)');
-} else if (isNativeBinary && content.includes(redactedThinkingCallsiteReplacement_v21117_native)) {
-  console.log('  ⚠️  Already applied (v2.1.17 redacted_thinking call site (native))');
-}
-
-if (isNativeBinary && content.includes(thinkingCallsiteSearchPattern_v21117_native)) {
-  patch2Applied = true;
-  patch2PlannedSteps.push('v2.1.17 thinking call site (native)');
-} else if (isNativeBinary && content.includes(thinkingCallsiteReplacement_v21117_native)) {
-  console.log('  ⚠️  Already applied (v2.1.17 thinking call site (native))');
+for (const rule of nativeExactPatchRules) {
+  detectNativeExactPatchRule(rule);
 }
 
 // Version-scoped native/binary regex detection (tweakcc-style unified patch).
 // This improves robustness for bun-packed native binaries whose identifiers differ from npm builds.
 // Only used when no exact-string patterns matched.
 if (isNativeBinary && patch2PlannedSteps.length === 0) {
-  if (content.includes('VERSION:"2.1.20"')) {
-    const { steps } = applyRegexPatches_v21120_native(content);
-    if (steps.length > 0) {
-      patch2Applied = true;
-      patch2PlannedSteps.push(...steps);
-    }
-  } else if (content.includes('VERSION:"2.1.22"')) {
-    const { steps } = applyRegexPatches_v21122_native(content);
-    if (steps.length > 0) {
-      patch2Applied = true;
-      patch2PlannedSteps.push(...steps);
-    }
-  } else if (content.includes('VERSION:"2.1.23"')) {
-    const { steps } = applyRegexPatches_v21123_native(content);
-    if (steps.length > 0) {
-      patch2Applied = true;
-      patch2PlannedSteps.push(...steps);
-    }
-  } else if (content.includes('VERSION:"2.1.27"')) {
-    const { steps } = applyRegexPatches_v21127_native(content);
-    if (steps.length > 0) {
-      patch2Applied = true;
-      patch2PlannedSteps.push(...steps);
-    }
-  } else if (content.includes('VERSION:"2.1.30"')) {
-    const { steps } = applyRegexPatches_v2130_native(content);
-    if (steps.length > 0) {
-      patch2Applied = true;
-      patch2PlannedSteps.push(...steps);
-    }
-  } else if (content.includes('VERSION:"2.1.31"')) {
-    const { steps } = applyRegexPatches_v2131_native(content);
-    if (steps.length > 0) {
-      patch2Applied = true;
-      patch2PlannedSteps.push(...steps);
-    }
-  } else if (content.includes('VERSION:"2.1.32"')) {
-    const { steps } = applyRegexPatches_v2132_native(content);
-    if (steps.length > 0) {
-      patch2Applied = true;
-      patch2PlannedSteps.push(...steps);
-    }
-  } else if (content.includes('VERSION:"2.1.33"')) {
-    const { steps } = applyRegexPatches_v2133_native(content);
-    if (steps.length > 0) {
-      patch2Applied = true;
-      patch2PlannedSteps.push(...steps);
-    }
-  } else if (content.includes('VERSION:"2.1.34"')) {
-    const { steps } = applyRegexPatches_v2134_native(content);
-    if (steps.length > 0) {
-      patch2Applied = true;
-      patch2PlannedSteps.push(...steps);
-    }
+  const matchedNativeRegexPatch = getMatchedNativeRegexPatch();
+  if (matchedNativeRegexPatch) {
+    const { steps } = matchedNativeRegexPatch.fn(content);
+    markPatch2DetectedSteps(steps);
   }
 }
 
@@ -2564,69 +2244,16 @@ if (isNativeBinary && patch2PlannedSteps.length === 0) {
 // Only used when no exact-string patterns matched.
 if (isNativeBinary && patch2PlannedSteps.length === 0) {
   const nativeSteps = detectNativeRegexPatches(content);
-  if (nativeSteps.length > 0) {
-    patch2Applied = true;
-    patch2PlannedSteps.push(...nativeSteps);
-  }
+  markPatch2DetectedSteps(nativeSteps);
 }
 
 if (patch2PlannedSteps.length > 0) {
   console.log(`  ✅ Pattern found (${patch2PlannedSteps.join(', ')}) - ready to apply`);
 } else {
   patch2AlreadyApplied =
-    content.includes(thinkingReplacement_v2062) ||
-    content.includes(redactedThinkingCallsiteReplacement_v2074) ||
-    content.includes(thinkingCallsiteReplacement_v2074) ||
-    content.includes(thinkingRendererReplacement_v2074) ||
-    content.includes(redactedThinkingCallsiteReplacement_v2076) ||
-    content.includes(thinkingCallsiteReplacement_v2076) ||
-    content.includes(thinkingRendererReplacement_v2076) ||
-    content.includes(thinkingRendererReplacement_v2071) ||
-    content.includes(redactedThinkingCallsiteReplacement_v2111) ||
-    content.includes(thinkingCallsiteReplacement_v2111) ||
-    content.includes(thinkingRendererReplacement_v2111) ||
-    content.includes(redactedThinkingCallsiteReplacement_v212) ||
-    content.includes(thinkingCallsiteReplacement_v212) ||
-    content.includes(thinkingRendererReplacement_v212) ||
-    content.includes(redactedThinkingCallsiteReplacement_v213) ||
-    content.includes(thinkingCallsiteReplacement_v213) ||
-    content.includes(thinkingRendererReplacement_v213) ||
-    content.includes(redactedThinkingCallsiteReplacement_v214) ||
-    content.includes(thinkingRendererReplacement_v214) ||
-    content.includes(redactedThinkingCallsiteReplacement_v216) ||
-    content.includes(thinkingCallsiteReplacement_v216) ||
-    content.includes(thinkingRendererReplacement_v216) ||
-    content.includes(redactedThinkingCallsiteReplacement_v217) ||
-    content.includes(thinkingCallsiteReplacement_v217) ||
-    content.includes(thinkingRendererReplacement_v217) ||
-    content.includes(redactedThinkingCallsiteReplacement_v219) ||
-    content.includes(thinkingCallsiteReplacement_v219) ||
-    content.includes(thinkingRendererReplacement_v219) ||
-    content.includes(redactedThinkingCallsiteReplacement_v21111) ||
-    content.includes(thinkingCallsiteReplacement_v21111) ||
-    content.includes(thinkingRendererReplacement_v21111) ||
-    content.includes(redactedThinkingCallsiteReplacement_v21112) ||
-    content.includes(thinkingCallsiteReplacement_v21112) ||
-    content.includes(thinkingRendererReplacement_v21112) ||
-    content.includes(redactedThinkingCallsiteReplacement_v21114) ||
-    content.includes(thinkingCallsiteReplacement_v21114) ||
-    content.includes(thinkingRendererReplacement_v21114) ||
-    content.includes(redactedThinkingCallsiteReplacement_v21115) ||
-	    content.includes(thinkingCallsiteReplacement_v21115) ||
-	    content.includes(redactedThinkingCallsiteReplacement_v21117) ||
-	    content.includes(thinkingCallsiteReplacement_v21117) ||
-	    content.includes(redactedThinkingCallsiteReplacement_v21119) ||
-	    content.includes(thinkingCallsiteReplacement_v21119) ||
-	    content.includes(redactedThinkingCallsiteReplacement_v21120) ||
-	    content.includes(thinkingCallsiteReplacement_v21120) ||
-	    content.includes(redactedThinkingCallsiteReplacement_v21122) ||
-	    content.includes(thinkingCallsiteReplacement_v21122) ||
-	    content.includes(redactedThinkingCallsiteReplacement_v21123) ||
-	    content.includes(thinkingCallsiteReplacement_v21123) ||
-	    content.includes(redactedThinkingCallsiteReplacement_v21117_native) ||
-	    content.includes(thinkingCallsiteReplacement_v21117_native) ||
-      (isNativeBinary && detectNativeAlreadyPatched(content)) ||
-      (!isNativeBinary && detectJsAlreadyPatched(content));
+    patch2KnownReplacementPatterns.some(pattern => content.includes(pattern)) ||
+    (isNativeBinary && detectNativeAlreadyPatched(content)) ||
+    (!isNativeBinary && detectJsAlreadyPatched(content));
 
   if (patch2AlreadyApplied) {
     console.log('  ⚠️  Already applied');
@@ -2649,6 +2276,29 @@ if (isDryRun) {
 }
 
 // Apply patches
+function applyJsRegexFallback(version, applyFn) {
+  if (isNativeBinary || !content.includes(`VERSION:"${version}"`)) return;
+  const result = applyFn(content);
+  if (result.steps.length === 0) return;
+  content = result.out;
+  for (const step of result.steps) {
+    console.log(`✅ Patch 2 applied: ${step}`);
+  }
+}
+
+function applyMatchedNativeRegexFallback() {
+  if (!isNativeBinary) return;
+  const matchedNativeRegexPatch = getMatchedNativeRegexPatch();
+  if (!matchedNativeRegexPatch) return;
+  const result = matchedNativeRegexPatch.fn(content);
+  if (result.steps.length === 0) return;
+  content = result.out;
+  markPatch2DetectedSteps(result.steps);
+  for (const step of result.steps) {
+    console.log(`✅ Patch 2 applied: ${step}`);
+  }
+}
+
 if (!patch1Applied && !patch2Applied) {
   if (patch1AlreadyApplied || patch2AlreadyApplied) {
     console.log('\n✅ Patches already applied - nothing to do.');
@@ -2677,899 +2327,24 @@ if (patch1Applied) {
 
 // Apply Patch 2
 if (patch2Applied) {
-  if (content.includes(thinkingSearchPattern_v2062)) {
-    content = replaceOnceExact(content, thinkingSearchPattern_v2062, thinkingReplacement_v2062, 'v2.0.62 thinking call site');
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.62 call site)');
+  for (const rule of legacyExactPatchRules) {
+    applyLegacyExactPatchRule(rule);
   }
 
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v2074)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v2074,
-      redactedThinkingCallsiteReplacement_v2074,
-      'v2.0.74 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.0.74 call site)');
+  for (const rule of jsHybridPatchRules) {
+    applyJsHybridPatchRule(rule);
   }
 
-  if (content.includes(thinkingCallsiteSearchPattern_v2074)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v2074,
-      thinkingCallsiteReplacement_v2074,
-      'v2.0.74 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.0.74 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v2074_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v2074_variantCollapsedBanner,
-      thinkingRendererReplacement_v2074,
-      'v2.0.74 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.74 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v2074_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v2074_variantNullGate,
-      thinkingRendererReplacement_v2074,
-      'v2.0.74 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.74 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v2076)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v2076,
-      redactedThinkingCallsiteReplacement_v2076,
-      'v2.0.76 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.0.76 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v2076)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v2076,
-      thinkingCallsiteReplacement_v2076,
-      'v2.0.76 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.0.76 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v2076_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v2076_variantCollapsedBanner,
-      thinkingRendererReplacement_v2076,
-      'v2.0.76 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.76 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v2076_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v2076_variantNullGate,
-      thinkingRendererReplacement_v2076,
-      'v2.0.76 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.76 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v2071_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v2071_variantCollapsedBanner,
-      thinkingRendererReplacement_v2071,
-      'v2.0.71 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.71 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v2071_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v2071_variantNullGate,
-      thinkingRendererReplacement_v2071,
-      'v2.0.71 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.0.71 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v2111)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v2111,
-      redactedThinkingCallsiteReplacement_v2111,
-      'v2.1.1 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.1 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v2111)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v2111,
-      thinkingCallsiteReplacement_v2111,
-      'v2.1.1 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.1 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v2111_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v2111_variantCollapsedBanner,
-      thinkingRendererReplacement_v2111,
-      'v2.1.1 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.1 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v2111_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v2111_variantNullGate,
-      thinkingRendererReplacement_v2111,
-      'v2.1.1 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.1 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v212)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v212,
-      redactedThinkingCallsiteReplacement_v212,
-      'v2.1.2 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.2 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v212)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v212,
-      thinkingCallsiteReplacement_v212,
-      'v2.1.2 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.2 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v212_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v212_variantCollapsedBanner,
-      thinkingRendererReplacement_v212,
-      'v2.1.2 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.2 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v212_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v212_variantNullGate,
-      thinkingRendererReplacement_v212,
-      'v2.1.2 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.2 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v213)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v213,
-      redactedThinkingCallsiteReplacement_v213,
-      'v2.1.3 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.3 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v213)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v213,
-      thinkingCallsiteReplacement_v213,
-      'v2.1.3 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.3 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v213_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v213_variantCollapsedBanner,
-      thinkingRendererReplacement_v213,
-      'v2.1.3 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.3 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v213_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v213_variantNullGate,
-      thinkingRendererReplacement_v213,
-      'v2.1.3 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.3 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v214)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v214,
-      redactedThinkingCallsiteReplacement_v214,
-      'v2.1.4 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.4 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v214_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v214_variantCollapsedBanner,
-      thinkingRendererReplacement_v214,
-      'v2.1.4 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.4 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v214_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v214_variantNullGate,
-      thinkingRendererReplacement_v214,
-      'v2.1.4 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.4 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v216)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v216,
-      redactedThinkingCallsiteReplacement_v216,
-      'v2.1.6 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.6 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v216)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v216,
-      thinkingCallsiteReplacement_v216,
-      'v2.1.6 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.6 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v216_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v216_variantCollapsedBanner,
-      thinkingRendererReplacement_v216,
-      'v2.1.6 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.6 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v216_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v216_variantNullGate,
-      thinkingRendererReplacement_v216,
-      'v2.1.6 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.6 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v217)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v217,
-      redactedThinkingCallsiteReplacement_v217,
-      'v2.1.7 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.7 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v217)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v217,
-      thinkingCallsiteReplacement_v217,
-      'v2.1.7 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.7 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v217_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v217_variantCollapsedBanner,
-      thinkingRendererReplacement_v217,
-      'v2.1.7 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.7 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v217_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v217_variantNullGate,
-      thinkingRendererReplacement_v217,
-      'v2.1.7 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.7 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v219)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v219,
-      redactedThinkingCallsiteReplacement_v219,
-      'v2.1.9 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.9 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v219)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v219,
-      thinkingCallsiteReplacement_v219,
-      'v2.1.9 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.9 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v219_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v219_variantCollapsedBanner,
-      thinkingRendererReplacement_v219,
-      'v2.1.9 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.9 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v219_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v219_variantNullGate,
-      thinkingRendererReplacement_v219,
-      'v2.1.9 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.9 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v21111)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21111,
-      redactedThinkingCallsiteReplacement_v21111,
-      'v2.1.11 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.11 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v21111)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21111,
-      thinkingCallsiteReplacement_v21111,
-      'v2.1.11 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.11 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v21111_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v21111_variantCollapsedBanner,
-      thinkingRendererReplacement_v21111,
-      'v2.1.11 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.11 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v21111_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v21111_variantNullGate,
-      thinkingRendererReplacement_v21111,
-      'v2.1.11 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.11 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v21112)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21112,
-      redactedThinkingCallsiteReplacement_v21112,
-      'v2.1.12 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.12 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v21112)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21112,
-      thinkingCallsiteReplacement_v21112,
-      'v2.1.12 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.12 call site)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v21112_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v21112_variantCollapsedBanner,
-      thinkingRendererReplacement_v21112,
-      'v2.1.12 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.12 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v21112_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v21112_variantNullGate,
-      thinkingRendererReplacement_v21112,
-      'v2.1.12 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.12 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v21114)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21114,
-      redactedThinkingCallsiteReplacement_v21114,
-      'v2.1.14 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.14 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v21114)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21114,
-      thinkingCallsiteReplacement_v21114,
-      'v2.1.14 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.14 call site)');
-  }
-
-  // Regex fallback for v2.1.14 call sites (only when exact patterns fail).
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.14"')) {
-    const result = applyRegexPatches_v21114(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v21114_variantCollapsedBanner)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v21114_variantCollapsedBanner,
-      thinkingRendererReplacement_v21114,
-      'v2.1.14 thinking renderer (collapsed banner)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.14 thinking renderer)');
-  }
-
-  if (content.includes(thinkingRendererSearchPattern_v21114_variantNullGate)) {
-    content = replaceOnceExact(
-      content,
-      thinkingRendererSearchPattern_v21114_variantNullGate,
-      thinkingRendererReplacement_v21114,
-      'v2.1.14 thinking renderer (null gate)'
-    );
-    console.log('✅ Patch 2 applied: thinking content forced visible (v2.1.14 thinking renderer)');
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v21115)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21115,
-      redactedThinkingCallsiteReplacement_v21115,
-      'v2.1.15 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.15 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v21115)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21115,
-      thinkingCallsiteReplacement_v21115,
-      'v2.1.15 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.15 call site)');
-  }
-
-  // Regex fallback for v2.1.15 call sites (only when exact patterns fail).
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.15"')) {
-    const result = applyRegexPatches_v21115(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v21117)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21117,
-      redactedThinkingCallsiteReplacement_v21117,
-      'v2.1.17 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.17 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v21117)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21117,
-      thinkingCallsiteReplacement_v21117,
-      'v2.1.17 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.17 call site)');
-  }
-
-  // Regex fallback for v2.1.17 call sites (only when exact patterns fail).
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.17"')) {
-    const result = applyRegexPatches_v21117(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v21119)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21119,
-      redactedThinkingCallsiteReplacement_v21119,
-      'v2.1.19 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.19 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v21119)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21119,
-      thinkingCallsiteReplacement_v21119,
-      'v2.1.19 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.19 call site)');
-  }
-
-  // Regex fallback for v2.1.19 call sites (only when exact patterns fail).
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.19"')) {
-    const result = applyRegexPatches_v21119(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v21120)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21120,
-      redactedThinkingCallsiteReplacement_v21120,
-      'v2.1.20 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.20 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v21120)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21120,
-      thinkingCallsiteReplacement_v21120,
-      'v2.1.20 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.20 call site)');
-  }
-
-  // Regex fallback for v2.1.20 call sites (only when exact patterns fail).
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.20"')) {
-    const result = applyRegexPatches_v21120(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v21122)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21122,
-      redactedThinkingCallsiteReplacement_v21122,
-      'v2.1.22 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.22 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v21122)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21122,
-      thinkingCallsiteReplacement_v21122,
-      'v2.1.22 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.22 call site)');
-  }
-
-  // Regex fallback for v2.1.22 call sites (only when exact patterns fail).
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.22"')) {
-    const result = applyRegexPatches_v21122(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  if (content.includes(redactedThinkingCallsiteSearchPattern_v21123)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21123,
-      redactedThinkingCallsiteReplacement_v21123,
-      'v2.1.23 redacted_thinking call site'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.23 call site)');
-  }
-
-  if (content.includes(thinkingCallsiteSearchPattern_v21123)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21123,
-      thinkingCallsiteReplacement_v21123,
-      'v2.1.23 thinking call site'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.23 call site)');
-  }
-
-  // Regex fallback for v2.1.23 call sites (only when exact patterns fail).
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.23"')) {
-    const result = applyRegexPatches_v21123(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Regex fallback for v2.1.27 call sites.
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.27"')) {
-    const result = applyRegexPatches_v21127(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Regex fallback for v2.1.30 call sites.
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.30"')) {
-    const result = applyRegexPatches_v2130(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Regex fallback for v2.1.31 call sites.
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.31"')) {
-    const result = applyRegexPatches_v2131(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Regex fallback for v2.1.32 call sites.
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.32"')) {
-    const result = applyRegexPatches_v2132(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Regex fallback for v2.1.33 call sites.
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.33"')) {
-    const result = applyRegexPatches_v2133(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Regex fallback for v2.1.34 call sites.
-  // Run after the exact-string replacements so we don't double-apply.
-  if (!isNativeBinary && content.includes('VERSION:"2.1.34"')) {
-    const result = applyRegexPatches_v2134(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Native/binary exact-string patches for v2.1.17.
-  // Apply in a loop in case the string appears more than once in the binary.
-  while (isNativeBinary && content.includes(redactedThinkingCallsiteSearchPattern_v21117_native)) {
-    content = replaceOnceExact(
-      content,
-      redactedThinkingCallsiteSearchPattern_v21117_native,
-      redactedThinkingCallsiteReplacement_v21117_native,
-      'v2.1.17 redacted_thinking call site (native)'
-    );
-    console.log('✅ Patch 2 applied: redacted_thinking forced visible (v2.1.17 native call site)');
-  }
+  applyStandaloneJsRegexPatches();
 
-  while (isNativeBinary && content.includes(thinkingCallsiteSearchPattern_v21117_native)) {
-    content = replaceOnceExact(
-      content,
-      thinkingCallsiteSearchPattern_v21117_native,
-      thinkingCallsiteReplacement_v21117_native,
-      'v2.1.17 thinking call site (native)'
-    );
-    console.log('✅ Patch 2 applied: thinking forced visible (v2.1.17 native call site)');
+  for (const rule of nativeExactPatchRules) {
+    applyNativeExactPatchRule(rule);
   }
 
-  // Version-scoped native/binary regex fallback for v2.1.20.
+  // Version-scoped native/binary regex fallback.
   // This mirrors the tweakcc-style unified regex (remove gate + force isTranscriptMode/hideInTranscript).
   // Run before the generic native regex fallback so the logs are clearer and the match is tighter.
-  if (isNativeBinary && content.includes('VERSION:"2.1.20"')) {
-    const result = applyRegexPatches_v21120_native(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Version-scoped native/binary regex fallback for v2.1.22.
-  if (isNativeBinary && content.includes('VERSION:"2.1.22"')) {
-    const result = applyRegexPatches_v21122_native(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Version-scoped native/binary regex fallback for v2.1.23.
-  if (isNativeBinary && content.includes('VERSION:"2.1.23"')) {
-    const result = applyRegexPatches_v21123_native(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Version-scoped native/binary regex fallback for v2.1.27.
-  if (isNativeBinary && content.includes('VERSION:"2.1.27"')) {
-    const result = applyRegexPatches_v21127_native(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Version-scoped native/binary regex fallback for v2.1.30.
-  if (isNativeBinary && content.includes('VERSION:"2.1.30"')) {
-    const result = applyRegexPatches_v2130_native(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Version-scoped native/binary regex fallback for v2.1.31.
-  if (isNativeBinary && content.includes('VERSION:"2.1.31"')) {
-    const result = applyRegexPatches_v2131_native(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Version-scoped native/binary regex fallback for v2.1.32.
-  if (isNativeBinary && content.includes('VERSION:"2.1.32"')) {
-    const result = applyRegexPatches_v2132_native(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Version-scoped native/binary regex fallback for v2.1.33.
-  if (isNativeBinary && content.includes('VERSION:"2.1.33"')) {
-    const result = applyRegexPatches_v2133_native(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
-
-  // Version-scoped native/binary regex fallback for v2.1.34.
-  if (isNativeBinary && content.includes('VERSION:"2.1.34"')) {
-    const result = applyRegexPatches_v2134_native(content);
-    if (result.steps.length > 0) {
-      content = result.out;
-      for (const step of result.steps) {
-        console.log(`✅ Patch 2 applied: ${step}`);
-      }
-    }
-  }
+  applyMatchedNativeRegexFallback();
 
   // Lightweight native/binary regex fallback.
   // Use only when the binary still contains the short-circuit gate patterns.
