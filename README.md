@@ -33,9 +33,35 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 ## Quick Start
 
+### One-liner (via curl)
+
+No need to clone the repository — run patches directly:
+
 ```bash
-# Clone or download this repository
-cd claude-code-thinking
+# Thinking display patch
+curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-thinking.js | node
+
+# NPM deprecation warning patch
+curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-npm-deprecation-warning.js | node
+
+# Subagent model configuration patch (create ~/.claude/subagent-models.json first)
+curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-subagent-models.js | node
+```
+
+If you need `--dry-run`, `--restore` or other options, download the script first:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-thinking.js -o /tmp/patch-thinking.js
+node /tmp/patch-thinking.js --dry-run
+node /tmp/patch-thinking.js --restore
+```
+
+### Clone and run
+
+```bash
+# Clone this repository
+git clone https://github.com/cnzgray/claude-code-patches.git
+cd claude-code-patches
 
 # Run the patch script (automatically detects your installation)
 node patch-thinking.js
