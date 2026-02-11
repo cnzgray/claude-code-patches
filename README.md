@@ -27,9 +27,9 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.1.38 (Updated 2026-02-10)
+**Current Version:** Claude Code 2.1.39 (Updated 2026-02-11)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39
 
 ## Quick Start
 
@@ -402,6 +402,21 @@ Then restart Claude Code.
 ## Verification
 
 Check if patches are applied:
+
+### v2.1.39
+
+```bash
+# Should include call sites that never short-circuit:
+grep -nF 'case"redacted_thinking":{let N;if(q[20]!==Y)N=F5.createElement(Kb4,{addMargin:Y}),q[20]=Y,q[21]=N;else N=q[21];return N}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+grep -nF 'case"thinking":{let T=j&&!(!G||W===G)&&!Z,k;if(q[22]!==Y||q[23]!==j||q[24]!==K||q[25]!==T)k=F5.createElement(pM6,{addMargin:Y,param:K,isTranscriptMode:!0,hideInTranscript:!1}),q[22]=Y,q[23]=j,q[24]=K,q[25]=T,q[26]=k;else k=q[26];return k}' \
+  ~/.nvs/node/*/*/lib/node_modules/@anthropic-ai/claude-code/cli.js
+
+# Native/binary installs store the JS bundle inside the executable.
+# Identifiers vary across builds; use a regex search instead of exact strings:
+rg -a -n -P 'case\"thinking\":\{[\s\S]{0,600}isTranscriptMode:!0[\s\S]{0,400}hideInTranscript:!1' \
+  ~/.local/share/claude/versions/2.1.39
+```
 
 ### v2.1.38
 
