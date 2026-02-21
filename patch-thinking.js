@@ -21,7 +21,7 @@ if (fileArgIndex >= 0 && !fileArgPath) {
 // Display help
 if (showHelp) {
   console.log(
-    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42)'
+    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50)'
   );
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
@@ -39,7 +39,7 @@ if (showHelp) {
 }
 
 console.log(
-  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42)'
+  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50)'
 );
 console.log('==============================================\n');
 
@@ -1175,6 +1175,18 @@ const redactedThinkingCallsiteGateRegex_v2141 = redactedThinkingCallsiteGateRege
 const thinkingVisibilityRegex_v2141 = thinkingVisibilityRegex_v2130;
 const redactedThinkingCallsiteGateRegex_v2142 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v2142 = thinkingVisibilityRegex_v2130;
+const redactedThinkingCallsiteGateRegex_v2144 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v2144 = thinkingVisibilityRegex_v2130;
+const redactedThinkingCallsiteGateRegex_v2145 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v2145 = thinkingVisibilityRegex_v21120;
+const redactedThinkingCallsiteGateRegex_v2147 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v2147 = thinkingVisibilityRegex_v21120;
+const redactedThinkingCallsiteGateRegex_v2148 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v2148 = thinkingVisibilityRegex_v21120;
+const redactedThinkingCallsiteGateRegex_v2149 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v2149 = thinkingVisibilityRegex_v21120;
+const redactedThinkingCallsiteGateRegex_v2150 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v2150 = thinkingVisibilityRegex_v21120;
 
 function applyJsRegexPatchRules(source, rules) {
   let out = source;
@@ -1410,6 +1422,60 @@ const { jsFn: applyRegexPatches_v2142, nativeFn: applyRegexPatches_v2142_native 
     'applyRegexPatches_v2142_native'
   );
 
+const { jsFn: applyRegexPatches_v2144, nativeFn: applyRegexPatches_v2144_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.44',
+    redactedThinkingCallsiteGateRegex_v2144,
+    thinkingVisibilityRegex_v2144,
+    thinkingVisibilityReplacer_withoutVerbose,
+    'applyRegexPatches_v2144_native'
+  );
+
+const { jsFn: applyRegexPatches_v2145, nativeFn: applyRegexPatches_v2145_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.45',
+    redactedThinkingCallsiteGateRegex_v2145,
+    thinkingVisibilityRegex_v2145,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v2145_native'
+  );
+
+const { jsFn: applyRegexPatches_v2147, nativeFn: applyRegexPatches_v2147_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.47',
+    redactedThinkingCallsiteGateRegex_v2147,
+    thinkingVisibilityRegex_v2147,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v2147_native'
+  );
+
+const { jsFn: applyRegexPatches_v2148, nativeFn: applyRegexPatches_v2148_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.48',
+    redactedThinkingCallsiteGateRegex_v2148,
+    thinkingVisibilityRegex_v2148,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v2148_native'
+  );
+
+const { jsFn: applyRegexPatches_v2149, nativeFn: applyRegexPatches_v2149_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.49',
+    redactedThinkingCallsiteGateRegex_v2149,
+    thinkingVisibilityRegex_v2149,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v2149_native'
+  );
+
+const { jsFn: applyRegexPatches_v2150, nativeFn: applyRegexPatches_v2150_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.50',
+    redactedThinkingCallsiteGateRegex_v2150,
+    thinkingVisibilityRegex_v2150,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v2150_native'
+  );
+
 
 let patch1Applied = false;
 let patch2Applied = false;
@@ -1501,6 +1567,42 @@ const regexPatchRegistry = [
     version: '2.1.42',
     js: applyRegexPatches_v2142,
     native: applyRegexPatches_v2142_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.44',
+    js: applyRegexPatches_v2144,
+    native: applyRegexPatches_v2144_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.45',
+    js: applyRegexPatches_v2145,
+    native: applyRegexPatches_v2145_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.47',
+    js: applyRegexPatches_v2147,
+    native: applyRegexPatches_v2147_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.48',
+    js: applyRegexPatches_v2148,
+    native: applyRegexPatches_v2148_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.49',
+    js: applyRegexPatches_v2149,
+    native: applyRegexPatches_v2149_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.50',
+    js: applyRegexPatches_v2150,
+    native: applyRegexPatches_v2150_native,
     jsStandaloneDetect: true,
   },
 ];
