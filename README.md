@@ -1,12 +1,13 @@
 # Claude Code Patches
 
-Enhance Claude Code with custom patches for thinking display and subagent model configuration.
+Enhance Claude Code with custom patches for thinking display, background command notification formatting, and subagent model configuration.
 
 ## Available Patches
 
 1. **[Thinking Display Patch](#thinking-display-patch)** - Make thinking blocks visible by default
-2. **[Subagent Model Configuration](#subagent-model-configuration)** - Configure which models subagents use
-3. **[NPM Deprecation Warning Patch](#npm-deprecation-warning-patch)** - Remove the “switched from npm to native installer” banner
+2. **[Background Command Format Patch](#background-command-format-patch)** - Remove embedded raw commands from background completion notifications
+3. **[Subagent Model Configuration](#subagent-model-configuration)** - Configure which models subagents use
+4. **[NPM Deprecation Warning Patch](#npm-deprecation-warning-patch)** - Remove the “switched from npm to native installer” banner
 
 ---
 
@@ -45,6 +46,9 @@ curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/pa
 
 # NPM deprecation warning patch
 curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-npm-deprecation-warning.js | node
+
+# Background command format patch
+curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-background-command-format.js | node
 
 # Subagent model configuration patch (create ~/.claude/subagent-models.json first)
 curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-subagent-models.js | node
@@ -989,6 +993,41 @@ If Claude Code updates and the patches stop working:
 4. **Update this README** with the new version information
 
 Pull requests welcome!
+
+---
+
+## Background Command Format Patch
+
+If Claude Code shows a completion notification like:
+
+```text
+Background command "...very long multi-line command..." completed (exit code 0)
+```
+
+and the embedded command becomes extremely long, you can patch Claude Code so the completion notification no longer embeds the raw command text.
+
+Apply the patch:
+
+```bash
+node patch-background-command-format.js
+```
+
+Options:
+- `--dry-run` preview changes without applying them
+- `--restore` restore from `cli.js.backup`
+- `--file /path/to/cli.js` patch a specific file
+
+Current behavior after patching:
+- removes the embedded raw command from the completion notification
+- keeps the completion status such as `completed (exit code 0)`
+- avoids huge multi-line notifications entirely
+
+Supports:
+- npm/local installs with patchable `cli.js`
+- native/binary installs via length-preserving in-place patching
+
+macOS note for native installs:
+- patched native binaries may need ad-hoc `codesign`; the script attempts this automatically
 
 ---
 
