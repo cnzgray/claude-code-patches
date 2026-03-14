@@ -295,50 +295,47 @@ function restoreFromBackup(targetPath) {
   console.log(`✅ Restored from backup: ${backupPath}`);
 }
 
+function locateNotificationBlockByMarker(text, markerRegex) {
+  const match = markerRegex.exec(text);
+  if (!match) return null;
+
+  const markerIndex = match.index;
+  const start = text.lastIndexOf('function ', markerIndex);
+  const endMarker = 'mode:"task-notification"})}';
+  const endStart = text.indexOf(endMarker, markerIndex);
+  if (start < 0 || endStart < 0) return null;
+
+  const end = endStart + endMarker.length;
+  const block = text.slice(start, end);
+  if (!block.includes('task-notification')) return null;
+
+  return { start, end, block };
+}
+
 function locateNotificationBlock(text) {
-  const originalLineRegex = /Background command "\$\{([^}]+)\}" \$\{([^}]+)\}/;
-  const alreadyPatchedLineRegex = /Background command \$\{([^}]+)\}/;
-
-  const originalMatch = originalLineRegex.exec(text);
-  if (originalMatch) {
-    const lineIndex = originalMatch.index;
-    const start = text.lastIndexOf('function ', lineIndex);
-    const endMarker = 'mode:"task-notification"})}';
-    const endStart = text.indexOf(endMarker, lineIndex);
-    if (start < 0 || endStart < 0) {
-      return { kind: 'not-found' };
-    }
-
-    const end = endStart + endMarker.length;
-    const block = text.slice(start, end);
-    return {
-      kind: 'original',
-      start,
-      end,
-      block,
-      originalLine: originalMatch[0],
-      statusExpr: originalMatch[2],
-    };
+  const originalBlock = locateNotificationBlockByMarker(text, /Background command "\$\{[^}]+\}" /);
+  if (originalBlock) {
+    return { kind: 'original', ...originalBlock };
   }
 
-  const patchedMatch = alreadyPatchedLineRegex.exec(text);
-  if (patchedMatch) {
-    const lineIndex = patchedMatch.index;
-    const endMarker = 'mode:"task-notification"})}';
-    const endStart = text.indexOf(endMarker, lineIndex);
-    if (endStart >= 0) {
-      const probe = text.slice(Math.max(0, lineIndex - 200), endStart + endMarker.length);
-      if (probe.includes('task-notification')) {
-        return { kind: 'already-patched' };
-      }
+  const alreadyPatchedMarkers = [
+    /Background command \$\{[^}]+\}/,
+    /Background command completed/,
+    /Background command failed/,
+    /Background command was stopped/,
+  ];
+
+  for (const markerRegex of alreadyPatchedMarkers) {
+    if (locateNotificationBlockByMarker(text, markerRegex)) {
+      return { kind: 'already-patched' };
     }
   }
 
   return { kind: 'not-found' };
 }
 
-function patchBlock(block, statusExpr) {
-  return block.replace(/Background command "\$\{[^}]+\}" \$\{[^}]+\}/, `Background command \$\{${statusExpr}\}`);
+function patchBlock(block) {
+  return block.replace(/Background command "\$\{[^}]+\}" /g, 'Background command ');
 }
 
 function padRightSpaces(str, targetLength) {
@@ -356,7 +353,7 @@ function applyPatchToText(text) {
     return { patched: false, alreadyPatched: false, next: text };
   }
 
-  const patchedBlock = patchBlock(located.block, located.statusExpr);
+  const patchedBlock = patchBlock(located.block);
   if (patchedBlock === located.block) {
     return { patched: false, alreadyPatched: true, next: text };
   }
@@ -375,7 +372,7 @@ function applyPatchToNativeBinary(buf) {
     return { patched: false, alreadyPatched: false, out: buf };
   }
 
-  const patchedBlock = patchBlock(located.block, located.statusExpr);
+  const patchedBlock = patchBlock(located.block);
   const paddedBlock = padRightSpaces(patchedBlock, located.block.length);
   if (paddedBlock === null) {
     throw new Error(`Refusing to patch native/binary: replacement grew (${located.block.length} -> ${patchedBlock.length}).`);
@@ -449,7 +446,7 @@ if (targetKind === 'js') {
     console.error('❌ Patch pattern not found.');
     console.error('   The Claude Code build may have changed.');
     console.error('   Try searching for this in the target file and paste ~1 line around it:');
-    console.error('   Background command "${q}" ${O}');
+    console.error('   Background command "${q}"');
     process.exit(1);
   }
 
@@ -476,7 +473,7 @@ if (targetKind === 'js') {
     console.error('❌ Patch pattern not found.');
     console.error('   The Claude Code build may have changed.');
     console.error('   Try searching for this in the target file and paste ~1 line around it:');
-    console.error('   Background command "${q}" ${O}');
+    console.error('   Background command "${q}"');
     process.exit(1);
   }
 
