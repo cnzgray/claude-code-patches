@@ -28,11 +28,11 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.1.74 (Updated 2026-03-12)
+**Current Version:** Claude Code 2.1.76 (Updated 2026-03-14)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.58, 2.1.59, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.58, 2.1.59, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76
 
-**npm availability note (2026-03-12):** `@anthropic-ai/claude-code@2.1.43`, `2.1.46`, `2.1.57`, `2.1.60`, and `2.1.65` are not published on npm (`ETARGET`). `2.1.64`, `2.1.66`, `2.1.67`, `2.1.68`, `2.1.69`, `2.1.70`, `2.1.71`, `2.1.72`, `2.1.73`, and `2.1.74` are published and were re-verified.
+**npm availability note (2026-03-14):** `@anthropic-ai/claude-code@2.1.43`, `2.1.46`, `2.1.57`, `2.1.60`, and `2.1.65` are not published on npm (`ETARGET`). `2.1.64`, `2.1.66`, `2.1.67`, `2.1.68`, `2.1.69`, `2.1.70`, `2.1.71`, `2.1.72`, `2.1.73`, `2.1.74`, `2.1.75`, and `2.1.76` are published and were re-verified.
 
 ## Quick Start
 
@@ -103,7 +103,7 @@ node patch-npm-deprecation-warning.js
 
 **Also supports native/binary installs:** patch the `claude` binary in-place (macOS may require re-signing; this script attempts ad-hoc re-sign automatically).
 
-**Re-verified on 2.1.69 / 2.1.70 / 2.1.71 / 2.1.72 / 2.1.73 / 2.1.74:** the npm build still uses `key:"npm-deprecation-warning"`, so the existing patch strategy remains valid for current npm-installed releases.
+**Re-verified on 2.1.69 / 2.1.70 / 2.1.71 / 2.1.72 / 2.1.73 / 2.1.74 / 2.1.75 / 2.1.76:** the npm build still uses `key:"npm-deprecation-warning"`, so the existing patch strategy remains valid for current npm-installed releases.
 
 Options:
 - `--dry-run` preview changes

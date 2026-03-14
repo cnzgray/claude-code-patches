@@ -21,7 +21,7 @@ if (fileArgIndex >= 0 && !fileArgPath) {
 // Display help
 if (showHelp) {
   console.log(
-    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74)'
+    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76)'
   );
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
@@ -39,7 +39,7 @@ if (showHelp) {
 }
 
 console.log(
-  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74)'
+  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76)'
 );
 console.log('==============================================\n');
 
@@ -1235,6 +1235,12 @@ const redactedThinkingCallsiteGateRegex_v2173 = redactedThinkingCallsiteGateRege
 const thinkingVisibilityRegex_v2173 = thinkingVisibilityRegex_v21120;
 const redactedThinkingCallsiteGateRegex_v2174 = redactedThinkingCallsiteGateRegex_v21120;
 const thinkingVisibilityRegex_v2174 = thinkingVisibilityRegex_v21120;
+// v2.1.75 keeps the same memoized call-site structure as v2.1.74.
+const redactedThinkingCallsiteGateRegex_v2175 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v2175 = thinkingVisibilityRegex_v21120;
+// v2.1.76 still uses the same tweakcc-style unified call-site structure.
+const redactedThinkingCallsiteGateRegex_v2176 = redactedThinkingCallsiteGateRegex_v21120;
+const thinkingVisibilityRegex_v2176 = thinkingVisibilityRegex_v21120;
 
 function applyJsRegexPatchRules(source, rules) {
   let out = source;
@@ -1740,6 +1746,24 @@ const { jsFn: applyRegexPatches_v2174, nativeFn: applyRegexPatches_v2174_native 
     'applyRegexPatches_v2174_native'
   );
 
+const { jsFn: applyRegexPatches_v2175, nativeFn: applyRegexPatches_v2175_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.75',
+    redactedThinkingCallsiteGateRegex_v2175,
+    thinkingVisibilityRegex_v2175,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v2175_native'
+  );
+
+const { jsFn: applyRegexPatches_v2176, nativeFn: applyRegexPatches_v2176_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.76',
+    redactedThinkingCallsiteGateRegex_v2176,
+    thinkingVisibilityRegex_v2176,
+    thinkingVisibilityReplacer_withVerbose,
+    'applyRegexPatches_v2176_native'
+  );
+
 
 let patch1Applied = false;
 let patch2Applied = false;
@@ -2011,6 +2035,18 @@ const regexPatchRegistry = [
     version: '2.1.74',
     js: applyRegexPatches_v2174,
     native: applyRegexPatches_v2174_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.75',
+    js: applyRegexPatches_v2175,
+    native: applyRegexPatches_v2175_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.76',
+    js: applyRegexPatches_v2176,
+    native: applyRegexPatches_v2176_native,
     jsStandaloneDetect: true,
   },
 ];
