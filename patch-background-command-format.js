@@ -301,11 +301,13 @@ function locateNotificationBlockByMarker(text, markerRegex) {
 
   const markerIndex = match.index;
   const start = text.lastIndexOf('function ', markerIndex);
-  const endMarker = 'mode:"task-notification"})}';
-  const endStart = text.indexOf(endMarker, markerIndex);
-  if (start < 0 || endStart < 0) return null;
+  if (start < 0) return null;
 
-  const end = endStart + endMarker.length;
+  const tail = text.slice(markerIndex);
+  const endMatch = /mode:"task-notification"(?:,priority:[^)]*)?\)\}/.exec(tail);
+  if (!endMatch) return null;
+
+  const end = markerIndex + endMatch.index + endMatch[0].length;
   const block = text.slice(start, end);
   if (!block.includes('task-notification')) return null;
 
@@ -313,16 +315,25 @@ function locateNotificationBlockByMarker(text, markerRegex) {
 }
 
 function locateNotificationBlock(text) {
-  const originalBlock = locateNotificationBlockByMarker(text, /Background command "\$\{[^}]+\}" /);
-  if (originalBlock) {
-    return { kind: 'original', ...originalBlock };
+  const originalMarkers = [
+    /Background command "\$\{[^}]+\}" /,
+    /\$\{[$\w]+\}"\$\{[$\w]+\}" completed/,
+  ];
+
+  for (const markerRegex of originalMarkers) {
+    const originalBlock = locateNotificationBlockByMarker(text, markerRegex);
+    if (originalBlock) {
+      return { kind: 'original', ...originalBlock };
+    }
   }
 
   const alreadyPatchedMarkers = [
-    /Background command \$\{[^}]+\}/,
     /Background command completed/,
     /Background command failed/,
     /Background command was stopped/,
+    /\$\{[$\w]+\}completed/,
+    /\$\{[$\w]+\}failed/,
+    /\$\{[$\w]+\}was stopped/,
   ];
 
   for (const markerRegex of alreadyPatchedMarkers) {
@@ -335,7 +346,14 @@ function locateNotificationBlock(text) {
 }
 
 function patchBlock(block) {
-  return block.replace(/Background command "\$\{[^}]+\}" /g, 'Background command ');
+  let next = block.replace(/Background command "\$\{[^}]+\}" /g, 'Background command ');
+
+  // v2.1.75+ moved the shared "Background command " prefix into a variable and now
+  // builds the message like `${prefix}"${command}" completed`. Remove only the raw
+  // command interpolation while keeping the shared prefix and status text intact.
+  next = next.replace(/(\$\{[$\w]+\})"\$\{[$\w]+\}" (?=completed|failed|was stopped)/g, '$1');
+
+  return next;
 }
 
 function padRightSpaces(str, targetLength) {
