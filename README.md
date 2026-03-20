@@ -1,13 +1,14 @@
 # Claude Code Patches
 
-Enhance Claude Code with custom patches for thinking display, background command notification formatting, and subagent model configuration.
+Enhance Claude Code with custom patches for thinking display, background command notification formatting, Task Output waiting-format cleanup, and subagent model configuration.
 
 ## Available Patches
 
 1. **[Thinking Display Patch](#thinking-display-patch)** - Make thinking blocks visible by default
 2. **[Background Command Format Patch](#background-command-format-patch)** - Remove embedded raw commands from background completion notifications
-3. **[Subagent Model Configuration](#subagent-model-configuration)** - Configure which models subagents use
-4. **[NPM Deprecation Warning Patch](#npm-deprecation-warning-patch)** - Remove the “switched from npm to native installer” banner
+3. **[Task Output Waiting Format Patch](#task-output-waiting-format-patch)** - Remove huge multiline task descriptions from `Task Output ... Waiting for task`
+4. **[Subagent Model Configuration](#subagent-model-configuration)** - Configure which models subagents use
+5. **[NPM Deprecation Warning Patch](#npm-deprecation-warning-patch)** - Remove the “switched from npm to native installer” banner
 
 ---
 
@@ -49,6 +50,9 @@ curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/pa
 
 # Background command format patch
 curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-background-command-format.js | node
+
+# Task Output waiting format patch
+curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-task-output-format.js | node
 
 # Subagent model configuration patch (create ~/.claude/subagent-models.json first)
 curl -fsSL https://raw.githubusercontent.com/cnzgray/claude-code-patches/main/patch-subagent-models.js | node
@@ -1023,6 +1027,47 @@ Current behavior after patching:
 - removes the embedded raw command from the completion notification
 - keeps the completion status such as `completed (exit code 0)`
 - avoids huge multi-line notifications entirely
+
+Supports:
+- npm/local installs with patchable `cli.js`
+- native/binary installs via length-preserving in-place patching
+
+macOS note for native installs:
+- patched native binaries may need ad-hoc `codesign`; the script attempts this automatically
+
+---
+
+## Task Output Waiting Format Patch
+
+If Claude Code shows a waiting block like:
+
+```text
+Task Output abc123
+  codeagent-wrapper --agent ... <<'EOF'
+  ... many lines ...
+  EOF
+     Waiting for task (esc to give additional instructions)
+```
+
+the long multiline command is not the final task output. It is the task description rendered by the `Task Output` tool while it waits.
+
+Apply the patch:
+
+```bash
+node patch-task-output-format.js
+```
+
+**Re-verified on 2.1.80:** the waiting-state UI still renders `taskDescription` verbatim inside `renderToolUseProgressMessage(...)`, so removing just that description element is enough to keep the view compact. The actual task output, task state, and completion notifications are unchanged.
+
+Options:
+- `--dry-run` preview changes without applying them
+- `--restore` restore from `cli.js.backup`
+- `--file /path/to/cli.js` patch a specific file
+
+Current behavior after patching:
+- removes the extra raw task-description line above `Waiting for task`
+- keeps the `Task Output <id>` tag and the `Waiting for task (esc to give additional instructions)` status line
+- avoids huge multiline waiting blocks caused by wrapped commands or heredocs
 
 Supports:
 - npm/local installs with patchable `cli.js`
