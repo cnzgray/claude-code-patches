@@ -310,10 +310,16 @@ function applyPatchToText(text) {
   // 1) Locate `key:"npm-deprecation-warning"`
   // 2) Find the exact call that contains it (e.g. `K({timeoutMs:15000,...})`)
   // 3) Remove `,K({..})` if comma-expression, otherwise replace `K({..})` with `void 0`
+  // 4) Also scrub the leftover key/text literals so previously half-patched files get cleaned up
 
   function isIdentChar(ch) {
     return /[A-Za-z0-9_$\.]/.test(ch);
   }
+
+  const keyNeedle = 'key:"npm-deprecation-warning"';
+  const warningTextRegex =
+    /Claude Code has switched from npm to native installer\. Run `?claude install`? or see https?:\/\/docs\.anthropic\.com\/en\/docs\/claude-code\/getting-started for more options\./g;
+  const replacementKey = 'key:""';
 
   function findMatchingParen(str, openParenIndex) {
     let depth = 0;
@@ -368,8 +374,7 @@ function applyPatchToText(text) {
     return -1;
   }
 
-  function patchOnce(str) {
-    const keyNeedle = 'key:"npm-deprecation-warning"';
+  function patchCallOnce(str) {
     const idxKey = str.indexOf(keyNeedle);
     if (idxKey === -1) return { did: false, next: str };
 
@@ -408,9 +413,19 @@ function applyPatchToText(text) {
   let did = false;
   // In case there are multiple occurrences (unlikely), patch a few times.
   for (let n = 0; n < 5; n++) {
-    const r = patchOnce(next);
+    const r = patchCallOnce(next);
     if (!r.did) break;
     next = r.next;
+    did = true;
+  }
+
+  if (next.includes(keyNeedle)) {
+    next = next.split(keyNeedle).join(replacementKey);
+    did = true;
+  }
+
+  if (warningTextRegex.test(next)) {
+    next = next.replace(warningTextRegex, '');
     did = true;
   }
 
@@ -422,6 +437,9 @@ function applyPatchToNativeBinary(buf) {
 
   const keyNeedle = 'key:"npm-deprecation-warning"';
   const windowSize = 2500;
+  const warningTextRegex =
+    /Claude Code has switched from npm to native installer\. Run `?claude install`? or see https?:\/\/docs\.anthropic\.com\/en\/docs\/claude-code\/getting-started for more options\./g;
+  const replacementKey = `key:"${' '.repeat('npm-deprecation-warning'.length)}"`;
 
   function isIdentChar(ch) {
     return /[A-Za-z0-9_$\.]/.test(ch);
@@ -520,6 +538,15 @@ function applyPatchToNativeBinary(buf) {
     return { did: true, next };
   }
 
+  function replaceRegexPreserveLength(str, regex) {
+    let did = false;
+    const next = str.replace(regex, match => {
+      did = true;
+      return ' '.repeat(match.length);
+    });
+    return { did, next };
+  }
+
   let text = buf.toString('latin1');
   let did = false;
 
@@ -529,6 +556,19 @@ function applyPatchToNativeBinary(buf) {
     if (!r.did) break;
     text = r.next;
     did = true;
+  }
+
+  if (text.includes(keyNeedle)) {
+    text = text.split(keyNeedle).join(replacementKey);
+    did = true;
+  }
+
+  {
+    const r = replaceRegexPreserveLength(text, warningTextRegex);
+    if (r.did) {
+      text = r.next;
+      did = true;
+    }
   }
 
   const outBuf = Buffer.from(text, 'latin1');
@@ -586,7 +626,11 @@ if (isRestore) {
 
 if (targetKind === 'js') {
   const originalText = fs.readFileSync(targetPath, 'utf8');
-  const alreadyGone = !originalText.includes('key:"npm-deprecation-warning"');
+  const alreadyGone =
+    !originalText.includes('key:"npm-deprecation-warning"') &&
+    !/Claude Code has switched from npm to native installer\. Run `?claude install`? or see https?:\/\/docs\.anthropic\.com\/en\/docs\/claude-code\/getting-started for more options\./.test(
+      originalText
+    );
   if (alreadyGone) {
     console.log('✅ Already patched (npm deprecation warning not found)');
     process.exit(0);
@@ -615,7 +659,11 @@ if (targetKind === 'js') {
 } else if (targetKind === 'native-binary') {
   const originalBuf = fs.readFileSync(targetPath);
   const originalLatin1 = originalBuf.toString('latin1');
-  const alreadyGone = !originalLatin1.includes('key:"npm-deprecation-warning"');
+  const alreadyGone =
+    !originalLatin1.includes('key:"npm-deprecation-warning"') &&
+    !/Claude Code has switched from npm to native installer\. Run `?claude install`? or see https?:\/\/docs\.anthropic\.com\/en\/docs\/claude-code\/getting-started for more options\./.test(
+      originalLatin1
+    );
   if (alreadyGone) {
     console.log('✅ Already patched (npm deprecation warning not found)');
     process.exit(0);
