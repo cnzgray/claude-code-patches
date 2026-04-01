@@ -21,7 +21,7 @@ if (fileArgIndex >= 0 && !fileArgPath) {
 // Display help
 if (showHelp) {
   console.log(
-    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76, 2.1.77, 2.1.78, 2.1.79, 2.1.80, 2.1.81, 2.1.83, 2.1.84, 2.1.85, 2.1.86)'
+    'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76, 2.1.77, 2.1.78, 2.1.79, 2.1.80, 2.1.81, 2.1.83, 2.1.84, 2.1.85, 2.1.86, 2.1.87, 2.1.88, 2.1.89)'
   );
   console.log('==============================================\n');
   console.log('Usage: node patch-thinking.js [options]\n');
@@ -39,7 +39,7 @@ if (showHelp) {
 }
 
 console.log(
-  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76, 2.1.77, 2.1.78, 2.1.79, 2.1.80, 2.1.81, 2.1.83, 2.1.84, 2.1.85, 2.1.86)'
+  'Claude Code Thinking Visibility Patcher (supports 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76, 2.1.77, 2.1.78, 2.1.79, 2.1.80, 2.1.81, 2.1.83, 2.1.84, 2.1.85, 2.1.86, 2.1.87, 2.1.88, 2.1.89)'
 );
 console.log('==============================================\n');
 
@@ -1256,7 +1256,7 @@ const thinkingVisibilityRegex_v2180 = thinkingVisibilityRegex_v2177;
 // v2.1.81 keeps the same memoized call-site structure as v2.1.77 to v2.1.80.
 const redactedThinkingCallsiteGateRegex_v2181 = redactedThinkingCallsiteGateRegex_v2180;
 const thinkingVisibilityRegex_v2181 = thinkingVisibilityRegex_v2180;
-// v2.1.83 / v2.1.84 / v2.1.85 / v2.1.86 keep the same memoized call-site structure as v2.1.77 to v2.1.81.
+// v2.1.83 to v2.1.89 keep the same memoized call-site structure as v2.1.77 to v2.1.81.
 const redactedThinkingCallsiteGateRegex_v2183 = redactedThinkingCallsiteGateRegex_v2181;
 const thinkingVisibilityRegex_v2183 = thinkingVisibilityRegex_v2181;
 const redactedThinkingCallsiteGateRegex_v2184 = redactedThinkingCallsiteGateRegex_v2183;
@@ -1265,6 +1265,12 @@ const redactedThinkingCallsiteGateRegex_v2185 = redactedThinkingCallsiteGateRege
 const thinkingVisibilityRegex_v2185 = thinkingVisibilityRegex_v2184;
 const redactedThinkingCallsiteGateRegex_v2186 = redactedThinkingCallsiteGateRegex_v2185;
 const thinkingVisibilityRegex_v2186 = thinkingVisibilityRegex_v2185;
+const redactedThinkingCallsiteGateRegex_v2187 = redactedThinkingCallsiteGateRegex_v2186;
+const thinkingVisibilityRegex_v2187 = thinkingVisibilityRegex_v2186;
+const redactedThinkingCallsiteGateRegex_v2188 = redactedThinkingCallsiteGateRegex_v2187;
+const thinkingVisibilityRegex_v2188 = thinkingVisibilityRegex_v2187;
+const redactedThinkingCallsiteGateRegex_v2189 = redactedThinkingCallsiteGateRegex_v2188;
+const thinkingVisibilityRegex_v2189 = thinkingVisibilityRegex_v2188;
 
 function applyJsRegexPatchRules(source, rules) {
   let out = source;
@@ -1873,6 +1879,33 @@ const { jsFn: applyRegexPatches_v2186, nativeFn: applyRegexPatches_v2186_native 
     'applyRegexPatches_v2186_native'
   );
 
+const { jsFn: applyRegexPatches_v2187, nativeFn: applyRegexPatches_v2187_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.87',
+    redactedThinkingCallsiteGateRegex_v2187,
+    thinkingVisibilityRegex_v2187,
+    thinkingVisibilityReplacer_withVerboseLoose,
+    'applyRegexPatches_v2187_native'
+  );
+
+const { jsFn: applyRegexPatches_v2188, nativeFn: applyRegexPatches_v2188_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.88',
+    redactedThinkingCallsiteGateRegex_v2188,
+    thinkingVisibilityRegex_v2188,
+    thinkingVisibilityReplacer_withVerboseLoose,
+    'applyRegexPatches_v2188_native'
+  );
+
+const { jsFn: applyRegexPatches_v2189, nativeFn: applyRegexPatches_v2189_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.89',
+    redactedThinkingCallsiteGateRegex_v2189,
+    thinkingVisibilityRegex_v2189,
+    thinkingVisibilityReplacer_withVerboseLoose,
+    'applyRegexPatches_v2189_native'
+  );
+
 
 let patch1Applied = false;
 let patch2Applied = false;
@@ -2210,6 +2243,24 @@ const regexPatchRegistry = [
     version: '2.1.86',
     js: applyRegexPatches_v2186,
     native: applyRegexPatches_v2186_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.87',
+    js: applyRegexPatches_v2187,
+    native: applyRegexPatches_v2187_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.88',
+    js: applyRegexPatches_v2188,
+    native: applyRegexPatches_v2188_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.89',
+    js: applyRegexPatches_v2189,
+    native: applyRegexPatches_v2189_native,
     jsStandaloneDetect: true,
   },
 ];
