@@ -19,7 +19,7 @@ if (fileArgIndex >= 0 && !fileArgPath) {
 }
 
 const supportedThinkingVersionsText =
-  '2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76, 2.1.77, 2.1.78, 2.1.79, 2.1.80, 2.1.81, 2.1.83, 2.1.84, 2.1.85, 2.1.86, 2.1.87, 2.1.88, 2.1.89, 2.1.90, 2.1.91, 2.1.92, 2.1.94, 2.1.96, 2.1.97, 2.1.98, 2.1.101, 2.1.102, 2.1.103, 2.1.104, 2.1.105, 2.1.106, 2.1.107';
+  '2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.57, 2.1.58, 2.1.59, 2.1.60, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.65, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76, 2.1.77, 2.1.78, 2.1.79, 2.1.80, 2.1.81, 2.1.83, 2.1.84, 2.1.85, 2.1.86, 2.1.87, 2.1.88, 2.1.89, 2.1.90, 2.1.91, 2.1.92, 2.1.94, 2.1.96, 2.1.97, 2.1.98, 2.1.101, 2.1.102, 2.1.103, 2.1.104, 2.1.105, 2.1.106, 2.1.107, 2.1.108';
 
 // Display help
 if (showHelp) {
@@ -1274,7 +1274,7 @@ const redactedThinkingCallsiteGateRegex_v2190 = redactedThinkingCallsiteGateRege
 const thinkingVisibilityRegex_v2190 = thinkingVisibilityRegex_v2189;
 const redactedThinkingCallsiteGateRegex_v2191 = redactedThinkingCallsiteGateRegex_v2190;
 const thinkingVisibilityRegex_v2191 = thinkingVisibilityRegex_v2190;
-// 2.1.92 / 2.1.94 / 2.1.96 / 2.1.97 / 2.1.98 / 2.1.101-2.1.107 keep the same
+// 2.1.92 / 2.1.94 / 2.1.96 / 2.1.97 / 2.1.98 / 2.1.101-2.1.108 keep the same
 // memoized thinking call-site shape as 2.1.91.
 const redactedThinkingCallsiteGateRegex_v2192 = redactedThinkingCallsiteGateRegex_v2191;
 const thinkingVisibilityRegex_v2192 = thinkingVisibilityRegex_v2191;
@@ -1300,6 +1300,8 @@ const redactedThinkingCallsiteGateRegex_v21106 = redactedThinkingCallsiteGateReg
 const thinkingVisibilityRegex_v21106 = thinkingVisibilityRegex_v21105;
 const redactedThinkingCallsiteGateRegex_v21107 = redactedThinkingCallsiteGateRegex_v21106;
 const thinkingVisibilityRegex_v21107 = thinkingVisibilityRegex_v21106;
+const redactedThinkingCallsiteGateRegex_v21108 = redactedThinkingCallsiteGateRegex_v21107;
+const thinkingVisibilityRegex_v21108 = thinkingVisibilityRegex_v21107;
 
 function applyJsRegexPatchRules(source, rules) {
   let out = source;
@@ -2054,6 +2056,14 @@ const { jsFn: applyRegexPatches_v21107, nativeFn: applyRegexPatches_v21107_nativ
     thinkingVisibilityReplacer_withVerboseLoose,
     'applyRegexPatches_v21107_native'
   );
+const { jsFn: applyRegexPatches_v21108, nativeFn: applyRegexPatches_v21108_native } =
+  buildThinkingVisibilityRegexPatchPair(
+    '2.1.108',
+    redactedThinkingCallsiteGateRegex_v21108,
+    thinkingVisibilityRegex_v21108,
+    thinkingVisibilityReplacer_withVerboseLoose,
+    'applyRegexPatches_v21108_native'
+  );
 
 
 let patch1Applied = false;
@@ -2494,6 +2504,12 @@ const regexPatchRegistry = [
     version: '2.1.107',
     js: applyRegexPatches_v21107,
     native: applyRegexPatches_v21107_native,
+    jsStandaloneDetect: true,
+  },
+  {
+    version: '2.1.108',
+    js: applyRegexPatches_v21108,
+    native: applyRegexPatches_v21108_native,
     jsStandaloneDetect: true,
   },
 ];
