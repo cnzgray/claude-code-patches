@@ -187,11 +187,13 @@ function resolveClaudeTarget() {
   // PRIORITY 1: Local installations
   const localPaths = [
     path.join(home, '.claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js'),
+    path.join(home, '.claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
     path.join(home, '.config', 'claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js'),
+    path.join(home, '.config', 'claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
   ];
   for (const p of localPaths) {
     const found = checkPath(p, 'local installation');
-    if (found && found.kind === 'js') {
+    if (found && (found.kind === 'js' || found.kind === 'native-binary')) {
       resolveClaudeTarget.attempted = attempted;
       return found;
     }
@@ -200,19 +202,28 @@ function resolveClaudeTarget() {
   // PRIORITY 2: Global npm installation via 'npm root -g'
   const npmGlobalRoot = safeExec('npm root -g');
   if (npmGlobalRoot) {
-    const found = checkPath(path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'cli.js'), 'npm root -g');
-    if (found && found.kind === 'js') {
-      resolveClaudeTarget.attempted = attempted;
-      return found;
+    const npmGlobalPaths = [
+      path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'cli.js'),
+      path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
+    ];
+    for (const npmGlobalPath of npmGlobalPaths) {
+      const found = checkPath(npmGlobalPath, 'npm root -g');
+      if (found && (found.kind === 'js' || found.kind === 'native-binary')) {
+        resolveClaudeTarget.attempted = attempted;
+        return found;
+      }
     }
   }
 
   // PRIORITY 3: Derive from process.execPath (common for nvm/asdf/etc)
   const nodeDir = path.dirname(process.execPath);
-  const derivedGlobalPath = path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
-  {
+  const derivedGlobalPaths = [
+    path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js'),
+    path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
+  ];
+  for (const derivedGlobalPath of derivedGlobalPaths) {
     const found = checkPath(derivedGlobalPath, 'derived from process.execPath');
-    if (found && found.kind === 'js') {
+    if (found && (found.kind === 'js' || found.kind === 'native-binary')) {
       resolveClaudeTarget.attempted = attempted;
       return found;
     }

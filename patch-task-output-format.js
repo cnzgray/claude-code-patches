@@ -186,11 +186,13 @@ function resolveClaudeTarget() {
 
   const localPaths = [
     path.join(home, '.claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js'),
+    path.join(home, '.claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
     path.join(home, '.config', 'claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js'),
+    path.join(home, '.config', 'claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
   ];
   for (const candidate of localPaths) {
     const found = checkPath(candidate, 'local installation');
-    if (found && found.kind === 'js') {
+    if (found && (found.kind === 'js' || found.kind === 'native-binary')) {
       resolveClaudeTarget.attempted = attempted;
       return found;
     }
@@ -198,18 +200,27 @@ function resolveClaudeTarget() {
 
   const npmGlobalRoot = safeExec('npm root -g');
   if (npmGlobalRoot) {
-    const found = checkPath(path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'cli.js'), 'npm root -g');
-    if (found && found.kind === 'js') {
-      resolveClaudeTarget.attempted = attempted;
-      return found;
+    const npmGlobalPaths = [
+      path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'cli.js'),
+      path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
+    ];
+    for (const npmGlobalPath of npmGlobalPaths) {
+      const found = checkPath(npmGlobalPath, 'npm root -g');
+      if (found && (found.kind === 'js' || found.kind === 'native-binary')) {
+        resolveClaudeTarget.attempted = attempted;
+        return found;
+      }
     }
   }
 
   const nodeDir = path.dirname(process.execPath);
-  {
-    const derivedGlobalPath = path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
+  const derivedGlobalPaths = [
+    path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js'),
+    path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
+  ];
+  for (const derivedGlobalPath of derivedGlobalPaths) {
     const found = checkPath(derivedGlobalPath, 'derived from process.execPath');
-    if (found && found.kind === 'js') {
+    if (found && (found.kind === 'js' || found.kind === 'native-binary')) {
       resolveClaudeTarget.attempted = attempted;
       return found;
     }
@@ -297,8 +308,7 @@ function restoreFromBackup(targetPath) {
   console.log(`Restored from backup: ${backupPath}`);
 }
 
-function locateTaskOutputProgressBlock(text) {
-  let startIndex = 0;
+function locateTaskOutputProgressBlock(text, startIndex = 0) {
   while (true) {
     const start = text.indexOf('renderToolUseProgressMessage(', startIndex);
     if (start < 0) return null;
@@ -337,22 +347,38 @@ function padRightSpaces(str, targetLength) {
 }
 
 function applyPatchToText(text, preserveLength) {
-  const located = locateTaskOutputProgressBlock(text);
-  if (!located) return { patched: false, alreadyPatched: false, next: text };
-  if (isAlreadyPatchedBlock(located.block)) return { patched: false, alreadyPatched: true, next: text };
+  let next = text;
+  let patchedCount = 0;
+  let sawPatchedBlock = false;
+  let cursor = 0;
 
-  const patchedBlock = patchBlock(located.block);
-  if (patchedBlock === located.block) {
-    return { patched: false, alreadyPatched: false, next: text };
+  while (true) {
+    const located = locateTaskOutputProgressBlock(next, cursor);
+    if (!located) break;
+
+    if (isAlreadyPatchedBlock(located.block)) {
+      sawPatchedBlock = true;
+      cursor = located.end;
+      continue;
+    }
+
+    const patchedBlock = patchBlock(located.block);
+    if (patchedBlock === located.block) {
+      cursor = located.end;
+      continue;
+    }
+
+    const finalBlock = preserveLength ? padRightSpaces(patchedBlock, located.block.length) : patchedBlock;
+    if (finalBlock === null) {
+      throw new Error(`Refusing to patch: replacement grew (${located.block.length} -> ${patchedBlock.length}).`);
+    }
+
+    next = next.slice(0, located.start) + finalBlock + next.slice(located.end);
+    cursor = located.start + finalBlock.length;
+    patchedCount += 1;
   }
 
-  const finalBlock = preserveLength ? padRightSpaces(patchedBlock, located.block.length) : patchedBlock;
-  if (finalBlock === null) {
-    throw new Error(`Refusing to patch: replacement grew (${located.block.length} -> ${patchedBlock.length}).`);
-  }
-
-  const next = text.slice(0, located.start) + finalBlock + text.slice(located.end);
-  return { patched: true, alreadyPatched: false, next };
+  return { patched: patchedCount > 0, alreadyPatched: patchedCount === 0 && sawPatchedBlock, next };
 }
 
 function applyPatchToNativeBinary(buf) {

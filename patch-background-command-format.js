@@ -184,11 +184,13 @@ function resolveClaudeTarget() {
 
   const localPaths = [
     path.join(home, '.claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js'),
+    path.join(home, '.claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
     path.join(home, '.config', 'claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js'),
+    path.join(home, '.config', 'claude', 'local', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
   ];
   for (const candidate of localPaths) {
     const found = checkPath(candidate, 'local installation');
-    if (found && found.kind === 'js') {
+    if (found && (found.kind === 'js' || found.kind === 'native-binary')) {
       resolveClaudeTarget.attempted = attempted;
       return found;
     }
@@ -196,18 +198,27 @@ function resolveClaudeTarget() {
 
   const npmGlobalRoot = safeExec('npm root -g');
   if (npmGlobalRoot) {
-    const found = checkPath(path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'cli.js'), 'npm root -g');
-    if (found && found.kind === 'js') {
-      resolveClaudeTarget.attempted = attempted;
-      return found;
+    const npmGlobalPaths = [
+      path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'cli.js'),
+      path.join(npmGlobalRoot, '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
+    ];
+    for (const npmGlobalPath of npmGlobalPaths) {
+      const found = checkPath(npmGlobalPath, 'npm root -g');
+      if (found && (found.kind === 'js' || found.kind === 'native-binary')) {
+        resolveClaudeTarget.attempted = attempted;
+        return found;
+      }
     }
   }
 
   const nodeDir = path.dirname(process.execPath);
-  const derivedGlobalPath = path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
-  {
+  const derivedGlobalPaths = [
+    path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js'),
+    path.join(nodeDir, '..', 'lib', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe'),
+  ];
+  for (const derivedGlobalPath of derivedGlobalPaths) {
     const found = checkPath(derivedGlobalPath, 'derived from process.execPath');
-    if (found && found.kind === 'js') {
+    if (found && (found.kind === 'js' || found.kind === 'native-binary')) {
       resolveClaudeTarget.attempted = attempted;
       return found;
     }
@@ -295,11 +306,11 @@ function restoreFromBackup(targetPath) {
   console.log(`✅ Restored from backup: ${backupPath}`);
 }
 
-function locateNotificationBlockByMarker(text, markerRegex) {
-  const match = markerRegex.exec(text);
+function locateNotificationBlockByMarker(text, markerRegex, startIndex = 0) {
+  const match = markerRegex.exec(text.slice(startIndex));
   if (!match) return null;
 
-  const markerIndex = match.index;
+  const markerIndex = startIndex + match.index;
   const start = text.lastIndexOf('function ', markerIndex);
   if (start < 0) return null;
 
@@ -311,22 +322,29 @@ function locateNotificationBlockByMarker(text, markerRegex) {
   const block = text.slice(start, end);
   if (!block.includes('task-notification')) return null;
 
-  return { start, end, block };
+  return { start, end, markerIndex, block };
 }
 
-function locateNotificationBlock(text) {
+function locateOriginalNotificationBlock(text, startIndex = 0) {
   const originalMarkers = [
     /Background command "\$\{[^}]+\}" /,
     /\$\{[$\w]+\}"\$\{[$\w]+\}" completed/,
   ];
 
+  let best = null;
   for (const markerRegex of originalMarkers) {
-    const originalBlock = locateNotificationBlockByMarker(text, markerRegex);
+    const originalBlock = locateNotificationBlockByMarker(text, markerRegex, startIndex);
     if (originalBlock) {
-      return { kind: 'original', ...originalBlock };
+      if (!best || originalBlock.markerIndex < best.markerIndex) {
+        best = { kind: 'original', ...originalBlock };
+      }
     }
   }
 
+  return best;
+}
+
+function hasPatchedNotificationBlock(text) {
   const alreadyPatchedMarkers = [
     /Background command completed/,
     /Background command failed/,
@@ -338,11 +356,11 @@ function locateNotificationBlock(text) {
 
   for (const markerRegex of alreadyPatchedMarkers) {
     if (locateNotificationBlockByMarker(text, markerRegex)) {
-      return { kind: 'already-patched' };
+      return true;
     }
   }
 
-  return { kind: 'not-found' };
+  return false;
 }
 
 function patchBlock(block) {
@@ -363,46 +381,60 @@ function padRightSpaces(str, targetLength) {
 }
 
 function applyPatchToText(text) {
-  const located = locateNotificationBlock(text);
-  if (located.kind === 'already-patched') {
-    return { patched: false, alreadyPatched: true, next: text };
-  }
-  if (located.kind !== 'original') {
-    return { patched: false, alreadyPatched: false, next: text };
+  let next = text;
+  let patchedCount = 0;
+  let cursor = 0;
+
+  while (true) {
+    const located = locateOriginalNotificationBlock(next, cursor);
+    if (!located) break;
+
+    const patchedBlock = patchBlock(located.block);
+    if (patchedBlock === located.block) {
+      cursor = located.end;
+      continue;
+    }
+
+    next = next.slice(0, located.start) + patchedBlock + next.slice(located.end);
+    cursor = located.start + patchedBlock.length;
+    patchedCount += 1;
   }
 
-  const patchedBlock = patchBlock(located.block);
-  if (patchedBlock === located.block) {
-    return { patched: false, alreadyPatched: true, next: text };
-  }
-
-  const next = text.slice(0, located.start) + patchedBlock + text.slice(located.end);
-  return { patched: true, alreadyPatched: false, next };
+  return { patched: patchedCount > 0, alreadyPatched: patchedCount === 0 && hasPatchedNotificationBlock(text), next };
 }
 
 function applyPatchToNativeBinary(buf) {
   const text = buf.toString('latin1');
-  const located = locateNotificationBlock(text);
-  if (located.kind === 'already-patched') {
-    return { patched: false, alreadyPatched: true, out: buf };
-  }
-  if (located.kind !== 'original') {
-    return { patched: false, alreadyPatched: false, out: buf };
+  let next = text;
+  let patchedCount = 0;
+  let cursor = 0;
+
+  while (true) {
+    const located = locateOriginalNotificationBlock(next, cursor);
+    if (!located) break;
+
+    const patchedBlock = patchBlock(located.block);
+    if (patchedBlock === located.block) {
+      cursor = located.end;
+      continue;
+    }
+
+    const paddedBlock = padRightSpaces(patchedBlock, located.block.length);
+    if (paddedBlock === null) {
+      throw new Error(`Refusing to patch native/binary: replacement grew (${located.block.length} -> ${patchedBlock.length}).`);
+    }
+
+    next = next.slice(0, located.start) + paddedBlock + next.slice(located.end);
+    cursor = located.start + paddedBlock.length;
+    patchedCount += 1;
   }
 
-  const patchedBlock = patchBlock(located.block);
-  const paddedBlock = padRightSpaces(patchedBlock, located.block.length);
-  if (paddedBlock === null) {
-    throw new Error(`Refusing to patch native/binary: replacement grew (${located.block.length} -> ${patchedBlock.length}).`);
-  }
-
-  const next = text.slice(0, located.start) + paddedBlock + text.slice(located.end);
   const out = Buffer.from(next, 'latin1');
   if (out.length !== buf.length) {
     throw new Error(`Refusing to patch native/binary: size changed (${buf.length} -> ${out.length}).`);
   }
 
-  return { patched: true, alreadyPatched: false, out };
+  return { patched: patchedCount > 0, alreadyPatched: patchedCount === 0 && hasPatchedNotificationBlock(text), out };
 }
 
 console.log('Claude Code background command format patcher');
