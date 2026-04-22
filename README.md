@@ -29,9 +29,9 @@ You have to press `ctrl+o` every time to see the actual thinking content. This p
 
 **Note:** This patch does **not** change the spinner/status line (e.g. `thought for 1s`) text or position — it only affects whether the *message* thinking content is rendered inline.
 
-**Current Version:** Claude Code 2.1.116 (Updated 2026-04-21)
+**Current Version:** Claude Code 2.1.117 (Updated 2026-04-22)
 
-**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.58, 2.1.59, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76, 2.1.77, 2.1.78, 2.1.79, 2.1.80, 2.1.81, 2.1.83, 2.1.84, 2.1.85, 2.1.86, 2.1.87, 2.1.88, 2.1.89, 2.1.90, 2.1.91, 2.1.92, 2.1.94, 2.1.96, 2.1.97, 2.1.98, 2.1.101, 2.1.104, 2.1.105, 2.1.107, 2.1.108, 2.1.109, 2.1.110, 2.1.111, 2.1.112, 2.1.113, 2.1.114, 2.1.116
+**Tested Versions:** 2.0.62, 2.0.71, 2.0.74, 2.0.75, 2.0.76, 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.6, 2.1.7, 2.1.9, 2.1.11, 2.1.12, 2.1.14, 2.1.15, 2.1.17, 2.1.19, 2.1.20, 2.1.22, 2.1.23, 2.1.27, 2.1.30, 2.1.31, 2.1.32, 2.1.33, 2.1.34, 2.1.36, 2.1.37, 2.1.38, 2.1.39, 2.1.40, 2.1.41, 2.1.42, 2.1.44, 2.1.45, 2.1.47, 2.1.48, 2.1.49, 2.1.50, 2.1.51, 2.1.52, 2.1.53, 2.1.54, 2.1.55, 2.1.56, 2.1.58, 2.1.59, 2.1.61, 2.1.62, 2.1.63, 2.1.64, 2.1.66, 2.1.67, 2.1.68, 2.1.69, 2.1.70, 2.1.71, 2.1.72, 2.1.73, 2.1.74, 2.1.75, 2.1.76, 2.1.77, 2.1.78, 2.1.79, 2.1.80, 2.1.81, 2.1.83, 2.1.84, 2.1.85, 2.1.86, 2.1.87, 2.1.88, 2.1.89, 2.1.90, 2.1.91, 2.1.92, 2.1.94, 2.1.96, 2.1.97, 2.1.98, 2.1.101, 2.1.104, 2.1.105, 2.1.107, 2.1.108, 2.1.109, 2.1.110, 2.1.111, 2.1.112, 2.1.113, 2.1.114, 2.1.116, 2.1.117
 
 Research notes:
 - `2.1.86`: [`.research/v2.1.86/README.md`](/Users/zgray/Downloads/claude-code-patches/.research/v2.1.86/README.md)
@@ -60,10 +60,11 @@ Research notes:
 - `2.1.113`: [`.research/v2.1.113/README.md`](/Users/zgray/Downloads/claude-code-patches/.research/v2.1.113/README.md)
 - `2.1.114`: [`.research/v2.1.114/README.md`](/Users/zgray/Downloads/claude-code-patches/.research/v2.1.114/README.md)
 - `2.1.116`: [`.research/v2.1.116/README.md`](/Users/zgray/Downloads/claude-code-patches/.research/v2.1.116/README.md)
+- `2.1.117`: [`.research/v2.1.117/README.md`](/Users/zgray/Downloads/claude-code-patches/.research/v2.1.117/README.md)
 
-**npm availability note (2026-04-21):** `@anthropic-ai/claude-code@2.1.43`, `2.1.46`, `2.1.57`, `2.1.60`, `2.1.65`, `2.1.102`, `2.1.103`, and `2.1.106` are not published on npm (`ETARGET`/`E404`). `2.1.64`, `2.1.66`, `2.1.67`, `2.1.68`, `2.1.69`, `2.1.70`, `2.1.71`, `2.1.72`, `2.1.73`, `2.1.74`, `2.1.75`, `2.1.76`, `2.1.77`, `2.1.78`, `2.1.79`, `2.1.80`, `2.1.81`, `2.1.83`, `2.1.84`, `2.1.85`, `2.1.86`, `2.1.87`, `2.1.88`, `2.1.89`, `2.1.90`, `2.1.91`, `2.1.92`, `2.1.94`, `2.1.96`, `2.1.97`, `2.1.98`, `2.1.101`, `2.1.104`, `2.1.105`, `2.1.107`, `2.1.108`, `2.1.109`, `2.1.110`, `2.1.111`, `2.1.112`, `2.1.113`, `2.1.114`, and `2.1.116` are published and were re-verified.
+**npm availability note (2026-04-22):** `@anthropic-ai/claude-code@2.1.43`, `2.1.46`, `2.1.57`, `2.1.60`, `2.1.65`, `2.1.102`, `2.1.103`, and `2.1.106` are not published on npm (`ETARGET`/`E404`). `2.1.64`, `2.1.66`, `2.1.67`, `2.1.68`, `2.1.69`, `2.1.70`, `2.1.71`, `2.1.72`, `2.1.73`, `2.1.74`, `2.1.75`, `2.1.76`, `2.1.77`, `2.1.78`, `2.1.79`, `2.1.80`, `2.1.81`, `2.1.83`, `2.1.84`, `2.1.85`, `2.1.86`, `2.1.87`, `2.1.88`, `2.1.89`, `2.1.90`, `2.1.91`, `2.1.92`, `2.1.94`, `2.1.96`, `2.1.97`, `2.1.98`, `2.1.101`, `2.1.104`, `2.1.105`, `2.1.107`, `2.1.108`, `2.1.109`, `2.1.110`, `2.1.111`, `2.1.112`, `2.1.113`, `2.1.114`, `2.1.116`, and `2.1.117` are published and were re-verified.
 
-`patch-thinking.js` now also registers `2.1.113`, `2.1.114`, and `2.1.116` for native/binary targets, reusing the same tweakcc-style memoized call-site regex family as `2.1.112`. Starting in `2.1.113`, the npm package is a wrapper whose `postinstall` copies the platform native binary into `bin/claude.exe`, so the patchers also auto-detect that npm/local binary path. `2.1.102`, `2.1.103`, and `2.1.106` remain inferred support only because Anthropic did not publish npm tarballs for direct validation.
+`patch-thinking.js` now also registers `2.1.113`, `2.1.114`, `2.1.116`, and `2.1.117` for native/binary targets, reusing the same tweakcc-style memoized call-site regex family as `2.1.112`. Starting in `2.1.113`, the npm package is a wrapper whose `postinstall` copies the platform native binary into `bin/claude.exe`, so the patchers also auto-detect that npm/local binary path. `2.1.102`, `2.1.103`, and `2.1.106` remain inferred support only because Anthropic did not publish npm tarballs for direct validation.
 
 ## Quick Start
 
@@ -137,7 +138,7 @@ node patch-npm-deprecation-warning.js
 
 **Also supports native/binary installs:** patch the `claude` binary in-place (macOS may require re-signing; this script attempts ad-hoc re-sign automatically).
 
-**Re-verified on 2.1.69 / 2.1.70 / 2.1.71 / 2.1.72 / 2.1.73 / 2.1.74 / 2.1.75 / 2.1.76 / 2.1.77 / 2.1.78 / 2.1.79 / 2.1.80 / 2.1.83 / 2.1.84 / 2.1.85 / 2.1.86 / 2.1.87 / 2.1.88 / 2.1.89 / 2.1.90 / 2.1.91 / 2.1.92 / 2.1.94 / 2.1.96 / 2.1.97 / 2.1.98 / 2.1.101 / 2.1.104 / 2.1.105 / 2.1.107 / 2.1.108 / 2.1.109 / 2.1.110 / 2.1.111 / 2.1.112 / 2.1.113 / 2.1.114 / 2.1.116:** the npm/native build still uses `key:"npm-deprecation-warning"`, so the existing patch strategy remains valid for current releases.
+**Re-verified on 2.1.69 / 2.1.70 / 2.1.71 / 2.1.72 / 2.1.73 / 2.1.74 / 2.1.75 / 2.1.76 / 2.1.77 / 2.1.78 / 2.1.79 / 2.1.80 / 2.1.83 / 2.1.84 / 2.1.85 / 2.1.86 / 2.1.87 / 2.1.88 / 2.1.89 / 2.1.90 / 2.1.91 / 2.1.92 / 2.1.94 / 2.1.96 / 2.1.97 / 2.1.98 / 2.1.101 / 2.1.104 / 2.1.105 / 2.1.107 / 2.1.108 / 2.1.109 / 2.1.110 / 2.1.111 / 2.1.112 / 2.1.113 / 2.1.114 / 2.1.116 / 2.1.117:** the npm/native build still uses `key:"npm-deprecation-warning"`, so the existing patch strategy remains valid for current releases.
 
 Options:
 - `--dry-run` preview changes
@@ -1046,7 +1047,7 @@ Apply the patch:
 node patch-background-command-format.js
 ```
 
-**Re-verified on 2.1.76 / 2.1.77 / 2.1.78 / 2.1.79 / 2.1.80 / 2.1.83 / 2.1.84 / 2.1.85 / 2.1.86 / 2.1.87 / 2.1.88 / 2.1.89 / 2.1.90 / 2.1.91 / 2.1.92 / 2.1.94 / 2.1.96 / 2.1.97 / 2.1.98 / 2.1.101 / 2.1.104 / 2.1.105 / 2.1.107 / 2.1.108 / 2.1.109 / 2.1.110 / 2.1.111 / 2.1.112 / 2.1.113 / 2.1.114 / 2.1.116:** the notification builder still emits the same three completion states (`completed` / `failed` / `was stopped`), but `2.1.77+` now constructs the shared `Background command ` prefix via a minified variable before interpolating the raw command. The patch script now handles both the old direct-string form and the newer prefix-variable form, for both npm and native installs, and patches duplicate embedded native bundles in one run.
+**Re-verified on 2.1.76 / 2.1.77 / 2.1.78 / 2.1.79 / 2.1.80 / 2.1.83 / 2.1.84 / 2.1.85 / 2.1.86 / 2.1.87 / 2.1.88 / 2.1.89 / 2.1.90 / 2.1.91 / 2.1.92 / 2.1.94 / 2.1.96 / 2.1.97 / 2.1.98 / 2.1.101 / 2.1.104 / 2.1.105 / 2.1.107 / 2.1.108 / 2.1.109 / 2.1.110 / 2.1.111 / 2.1.112 / 2.1.113 / 2.1.114 / 2.1.116 / 2.1.117:** the notification builder still emits the same three completion states (`completed` / `failed` / `was stopped`), but `2.1.77+` now constructs the shared `Background command ` prefix via a minified variable before interpolating the raw command. The patch script now handles both the old direct-string form and the newer prefix-variable form, for both npm and native installs, and patches duplicate embedded native bundles in one run.
 
 Options:
 - `--dry-run` preview changes without applying them
@@ -1087,7 +1088,7 @@ Apply the patch:
 node patch-task-output-format.js
 ```
 
-**Re-verified on 2.1.80 / 2.1.83 / 2.1.84 / 2.1.85 / 2.1.86 / 2.1.87 / 2.1.88 / 2.1.89 / 2.1.90 / 2.1.91 / 2.1.92 / 2.1.94 / 2.1.96 / 2.1.97 / 2.1.98 / 2.1.101 / 2.1.104 / 2.1.105 / 2.1.107 / 2.1.108 / 2.1.109 / 2.1.110 / 2.1.111 / 2.1.112 / 2.1.113 / 2.1.114 / 2.1.116:** the waiting-state UI still renders `taskDescription` verbatim inside `renderToolUseProgressMessage(...)`, so removing just that description element is enough to keep the view compact. The script now scans all duplicate native renderer blocks; the actual task output, task state, and completion notifications are unchanged.
+**Re-verified on 2.1.80 / 2.1.83 / 2.1.84 / 2.1.85 / 2.1.86 / 2.1.87 / 2.1.88 / 2.1.89 / 2.1.90 / 2.1.91 / 2.1.92 / 2.1.94 / 2.1.96 / 2.1.97 / 2.1.98 / 2.1.101 / 2.1.104 / 2.1.105 / 2.1.107 / 2.1.108 / 2.1.109 / 2.1.110 / 2.1.111 / 2.1.112 / 2.1.113 / 2.1.114 / 2.1.116 / 2.1.117:** the waiting-state UI still renders `taskDescription` verbatim inside `renderToolUseProgressMessage(...)`, so removing just that description element is enough to keep the view compact. The script now scans all duplicate native renderer blocks; the actual task output, task state, and completion notifications are unchanged.
 
 Options:
 - `--dry-run` preview changes without applying them
