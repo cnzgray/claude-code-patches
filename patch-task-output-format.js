@@ -310,7 +310,7 @@ function restoreFromBackup(targetPath) {
 
 function locateTaskOutputProgressBlock(text, startIndex = 0) {
   while (true) {
-    const start = text.indexOf('renderToolUseProgressMessage(', startIndex);
+    const start = text.indexOf('renderToolUseProgressMessage', startIndex);
     if (start < 0) return null;
 
     const end = text.indexOf('},renderToolResultMessage(', start);
@@ -327,17 +327,24 @@ function locateTaskOutputProgressBlock(text, startIndex = 0) {
 
 function isAlreadyPatchedBlock(block) {
   if (!block.includes('Waiting for task')) return false;
-  if (/taskDescription&&[\s\S]*?taskDescription\),/.test(block)) return false;
-  return /createElement\([\w$]+,\{flexDirection:"column"\},null,\s*[\w$]+\.default\.createElement\([\w$]+,null,"[^"]*Waiting for task"/.test(
+  if (/taskDescription&&[\s\S]*?taskDescription/.test(block)) return false;
+  return /(?:createElement|jsx|jsxs)\([\w$]+,\{flexDirection:"column"[\s\S]{0,300}?children:\[null,\s*[\w$]+\.(?:default\.)?(?:createElement|jsx|jsxs)\([\w$]+,[\s\S]{0,300}?Waiting for task/.test(
     block
   );
 }
 
 function patchBlock(block) {
-  return block.replace(
+  let next = block.replace(
     /[\w$]+\?\.taskDescription&&[\w$]+\.default\.createElement\([\w$]+,null,"[^"]*",[\w$]+\.taskDescription\),/,
     'null,'
   );
+
+  next = next.replace(
+    /[\w$]+\?\.taskDescription&&[\w$]+\.(?:jsx|jsxs)\([\w$]+,\{children:\[[\s\S]{0,160}?[\w$]+\.taskDescription\]\}\),/,
+    'null,'
+  );
+
+  return next;
 }
 
 function padRightSpaces(str, targetLength) {
